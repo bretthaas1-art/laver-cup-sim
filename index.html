@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07090d">
+<meta name="description" content="Laver Cup simulator: draft Team Europe vs Team World, pick coaches and matchups, and play it out!">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Laver Cup">
+<meta name="application-name" content="Laver Cup Sim">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<title>Laver Cup Simulator 🎾 Team Europe vs Team World</title>
+<style>
+:root{
+  --eu:#1f5fe0; --eu-d:#0b2f86; --eu-l:#7fb0ff;
+  --w:#e0262f;  --w-d:#7d0f16;  --w-l:#ff8b8f;
+  --bg:#07090d; --panel:#121620; --panel2:#1a1f2c; --line:#2a3142;
+  --txt:#eef2fa; --mut:#9aa4b8; --good:#22c55e; --warn:#f59e0b; --bad:#ef4444; --gold:#ffd54a;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Apple Color Emoji","Segoe UI Emoji",sans-serif;}
+body{min-height:100vh;background:
+  radial-gradient(1200px 500px at -10% -10%, rgba(31,95,224,.28), transparent 60%),
+  radial-gradient(1200px 500px at 110% -10%, rgba(224,38,47,.25), transparent 60%), var(--bg);}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer;border:0;border-radius:14px;padding:12px 18px;min-height:48px;font-size:1.02rem;font-weight:800;background:var(--panel2);border:1px solid var(--line);transition:transform .08s, filter .15s, background .15s}
+button:hover{filter:brightness(1.15)} button:active{transform:scale(.97)}
+button:disabled{opacity:.4;cursor:not-allowed;filter:none;transform:none}
+.btn-eu{background:linear-gradient(180deg,var(--eu),var(--eu-d));border-color:#3d74e8}
+.btn-w{background:linear-gradient(180deg,var(--w),var(--w-d));border-color:#ee4b52}
+.btn-gold{background:linear-gradient(180deg,#ffd54a,#e2a500);color:#1b1300;border-color:#ffe07a}
+.btn-big{font-size:1.25rem;padding:16px 26px;min-height:58px;border-radius:18px}
+select,input[type=text]{background:#0d1018;border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+select:focus,input:focus{outline:2px solid #4f7cff;outline-offset:1px}
+header.top{display:flex;align-items:center;gap:16px;padding:14px 22px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:12px}
+.logo .ball{font-size:2.1rem;filter:drop-shadow(0 0 10px rgba(255,230,0,.4))}
+.logo h1{margin:0;font-size:1.55rem;letter-spacing:.14em;text-transform:uppercase;font-weight:900}
+.logo h1 .eu{color:var(--eu-l)} .logo h1 .w{color:var(--w-l)}
+.logo small{display:block;color:var(--mut);font-size:.78rem;letter-spacing:.05em}
+nav.steps{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+nav.steps button{background:transparent;border:1px solid var(--line);border-radius:999px;padding:10px 16px;min-height:46px;font-size:1rem}
+nav.steps button.active{background:#fff;color:#0b0e14;border-color:#fff}
+main{padding:0 22px 40px;max-width:1280px;margin:0 auto}
+.panel{min-width:0;background:linear-gradient(180deg,var(--panel),#0f131b);border:1px solid var(--line);border-radius:18px;padding:16px}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+@media (max-width:820px){.grid2{grid-template-columns:1fr}}
+h2{margin:0 0 10px;font-size:1.25rem;letter-spacing:.06em;text-transform:uppercase}
+h3{margin:6px 0 8px;font-size:1rem;letter-spacing:.05em;text-transform:uppercase;color:var(--mut)}
+.mut{color:var(--mut)} .small{font-size:.82rem}
+.tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.72rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+.tag.eu{background:rgba(31,95,224,.25);color:var(--eu-l);border:1px solid rgba(127,176,255,.35)}
+.tag.w{background:rgba(224,38,47,.22);color:var(--w-l);border:1px solid rgba(255,139,143,.35)}
+.team-col.eu{border-top:5px solid var(--eu)} .team-col.w{border-top:5px solid var(--w)}
+.team-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.team-head h2{margin:0}
+.eu .team-name{color:var(--eu-l)} .w .team-name{color:var(--w-l)}
+.slots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+@media (max-width:520px){.slots{grid-template-columns:repeat(2,1fr)}}
+.slot{min-height:64px;border:2px dashed var(--line);border-radius:14px;display:flex;align-items:center;justify-content:center;color:var(--mut);font-size:.85rem;text-align:center;padding:6px}
+.slot.filled{border-style:solid;cursor:pointer;position:relative;color:var(--txt);flex-direction:column;gap:2px}
+.eu .slot.filled{border-color:var(--eu);background:rgba(31,95,224,.16)}
+.w .slot.filled{border-color:var(--w);background:rgba(224,38,47,.14)}
+.slot.filled:hover::after{content:"✕ remove";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.72);border-radius:12px;font-weight:800}
+.slot .nm{font-weight:800;font-size:.95rem}
+.pool{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;max-height:520px;overflow:auto;padding-right:4px}
+.pcard{min-height:64px;display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;background:var(--panel2);border:1px solid var(--line);cursor:pointer;text-align:left;font-weight:400}
+.pcard:hover{border-color:#5a6990}
+.pcard.dis{opacity:.4;cursor:not-allowed}
+.pcard .flag{font-size:1.5rem;width:30px;text-align:center}
+.pcard .info{flex:1;min-width:0}
+.pcard .nm{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcard .meta{font-size:.74rem;color:var(--mut)}
+.rk{font-weight:900;font-size:.8rem;background:#0b0e14;border:1px solid var(--line);border-radius:8px;padding:2px 6px;min-width:34px;text-align:center}
+.bar{height:6px;border-radius:6px;background:#0b0e14;overflow:hidden;margin-top:4px}
+.bar>i{display:block;height:100%;border-radius:6px}
+.eu .bar>i,.bar.eu>i{background:linear-gradient(90deg,var(--eu-d),var(--eu-l))}
+.w .bar>i,.bar.w>i{background:linear-gradient(90deg,var(--w-d),var(--w-l))}
+.capt-card{border-radius:14px;padding:12px;background:var(--panel2);border:1px solid var(--line);margin-top:8px}
+.capt-card .pw{font-weight:900;font-size:1.05rem}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--mut);font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+label.f select,label.f input{width:100%;max-width:100%;font-size:1rem;color:var(--txt);text-transform:none;letter-spacing:0;font-weight:400}
+.day{margin-top:14px}
+.day-h{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
+.day-h .pts{color:var(--gold);font-weight:900}
+.mrow{display:grid;grid-template-columns:110px 1fr 34px 1fr 150px;gap:10px;align-items:center;padding:10px;border-radius:14px;background:var(--panel2);border:1px solid var(--line);margin-bottom:8px}
+.mrow .lbl{font-weight:800;font-size:.85rem}
+.mrow .lbl small{display:block;color:var(--mut);font-weight:600}
+.mrow .vs{text-align:center;font-weight:900;color:var(--mut)}
+.mrow .side{display:flex;gap:6px}
+.mrow .side select{flex:1;width:100%}
+.mrow .side.eu select{border-color:rgba(31,95,224,.7)} .mrow .side.w select{border-color:rgba(224,38,47,.7)}
+@media (max-width:900px){.mrow{grid-template-columns:1fr 1fr}.mrow .lbl{grid-column:1/-1}.mrow .vs{display:none}.mrow .prob{grid-column:1/-1}}
+.prob{font-size:.75rem}
+.pbar{display:flex;height:16px;border-radius:8px;overflow:hidden;font-size:.68rem;font-weight:800}
+.pbar>b{display:flex;align-items:center;padding:0 5px;white-space:nowrap}
+.pbar>b.e{background:var(--eu);justify-content:flex-start} .pbar>b.wd{background:var(--w);justify-content:flex-end}
+.msgs{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.msg{padding:10px 12px;border-radius:12px;font-weight:600;font-size:.92rem}
+.msg.err{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.45)}
+.msg.warn{background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.4)}
+.msg.ok{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.45)}
+.usage{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chip{font-size:.75rem;padding:4px 8px;border-radius:999px;background:#0b0e14;border:1px solid var(--line)}
+.chip.bad{border-color:var(--bad);color:#ffb4b4}
+/* scoreboard */
+.board{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);border-radius:22px;overflow:hidden;border:1px solid var(--line);box-shadow:0 10px 40px rgba(0,0,0,.5)}
+.board .side{padding:16px 22px;display:flex;align-items:center;gap:16px}
+.board .side.eu{background:linear-gradient(135deg,var(--eu-d),var(--eu));}
+.board .side.w{background:linear-gradient(225deg,var(--w-d),var(--w));justify-content:flex-end;text-align:right}
+.board .tn{font-weight:900;letter-spacing:.12em;font-size:1.3rem;text-transform:uppercase}
+.board .cap{font-size:.8rem;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.board .side>div{min-width:0}
+.board .sc{font-size:5.2rem;font-weight:900;line-height:1;font-variant-numeric:tabular-nums;text-shadow:0 4px 20px rgba(0,0,0,.4);min-width:1.3em;text-align:center}
+.board .sc.bump{animation:bump .6s}
+@keyframes bump{0%{transform:scale(1)}35%{transform:scale(1.35)}100%{transform:scale(1)}}
+.board .mid{background:#05070a;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 18px;text-align:center;min-width:150px}
+.board .mid .ft{font-size:.72rem;color:var(--mut);letter-spacing:.12em;text-transform:uppercase}
+.board .mid .dy{font-weight:900;font-size:1.05rem;margin-top:4px}
+.prog13{display:flex;gap:3px;margin-top:8px}
+.prog13 i{width:12px;height:12px;border-radius:3px;background:rgba(255,255,255,.18)}
+.prog13 i.on{background:#fff;box-shadow:0 0 6px #fff}
+@media (max-width:1000px){.board .sc{font-size:4rem}.board .tn{font-size:1.05rem;letter-spacing:.08em}.board .side{padding:14px;gap:10px}.board .mid{min-width:110px;padding:8px 10px}.prog13 i{width:9px;height:10px}}
+@media (max-width:640px){.board{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.board .mid{grid-column:1/-1;order:3;flex-direction:row;gap:10px;min-width:0}.board .mid .dy{margin:0}.board .side.w{flex-direction:row-reverse;justify-content:flex-start}.board .side.w>div:last-child{text-align:right}.board .sc{font-size:3.4rem}.board .tn{font-size:1rem}.board .side{padding:12px;gap:8px}.board .mid{min-width:90px;padding:8px}.prog13 i{width:7px;height:9px}}
+.matches{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px;margin-top:14px}
+.mcard{border-radius:16px;background:var(--panel2);border:1px solid var(--line);padding:10px 12px;position:relative;transition:opacity .3s}
+.mcard.pending{opacity:.45}
+.mcard.live{border-color:var(--gold);box-shadow:0 0 0 2px rgba(255,213,74,.35)}
+.mcard.notneeded{opacity:.3}
+.mcard .mh{display:flex;justify-content:space-between;font-size:.75rem;color:var(--mut);font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.mcard .mh .pt{color:var(--gold)}
+.sline{display:grid;grid-template-columns:8px 1fr repeat(3,34px) 26px;gap:6px;align-items:center;padding:5px 0}
+.sline .stripe{height:100%;min-height:22px;border-radius:4px}
+.sline.eu .stripe{background:var(--eu)} .sline.w .stripe{background:var(--w)}
+.sline .who{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sline.won .who{font-weight:900}
+.sline .g{text-align:center;font-weight:800;font-variant-numeric:tabular-nums;font-size:1.05rem;position:relative}
+.sline .g sup{font-size:.6rem;color:var(--mut);position:absolute;top:-2px;right:-2px}
+.sline .g.wg{color:#fff} .sline .g.lg{color:#8590a6}
+.sline .g.pop{animation:pop .35s}
+@keyframes pop{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
+.sline .tick{color:var(--gold);font-weight:900;text-align:center}
+.comm{font-size:.82rem;color:#d6dcea;margin-top:6px;min-height:1.1em}
+.ctrl{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0}
+/* MC */
+.big-pct{display:flex;height:64px;border-radius:18px;overflow:hidden;font-weight:900;font-size:1.6rem}
+.big-pct>div{display:flex;align-items:center;padding:0 18px;white-space:nowrap;transition:width .8s}
+.big-pct .e{background:linear-gradient(90deg,var(--eu-d),var(--eu))}
+.big-pct .wd{background:linear-gradient(270deg,var(--w-d),var(--w));justify-content:flex-end}
+.hist{display:flex;align-items:flex-end;gap:4px;height:200px;padding-top:10px;border-bottom:1px solid var(--line);overflow-x:auto}
+.hist .hb{flex:1;min-width:26px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.hist .hb i{display:block;width:100%;border-radius:6px 6px 0 0;min-height:2px}
+.hist .hb.e i{background:var(--eu)} .hist .hb.wd i{background:var(--w)}
+.hist .hb span{font-size:.65rem;color:var(--mut);margin-bottom:2px}
+.hlabels{display:flex;gap:4px;overflow-x:auto}
+.hlabels div{flex:1;min-width:26px;text-align:center;font-size:.62rem;color:var(--mut);transform:rotate(-40deg);transform-origin:center;margin-top:12px;white-space:nowrap}
+table.t{width:100%;border-collapse:collapse;font-size:.88rem}
+table.t th,table.t td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left}
+table.t th{color:var(--mut);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase}
+.pgw{height:8px;background:#0b0e14;border-radius:8px;overflow:hidden;width:120px;display:inline-block;vertical-align:middle}
+.pgw i{display:block;height:100%;background:linear-gradient(90deg,#999,#fff)}
+.stat{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:12px;text-align:center}
+.stat b{display:block;font-size:1.6rem}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin:14px 0}
+/* celebration */
+#celebrate{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:50;background:rgba(0,0,0,.55);backdrop-filter:blur(2px)}
+#celebrate.show{display:flex}
+#celebrate .box{text-align:center;padding:30px 40px;border-radius:26px;border:3px solid var(--gold);box-shadow:0 0 60px rgba(255,213,74,.5);animation:zoom .6s cubic-bezier(.2,1.6,.4,1);max-width:92vw}
+#celebrate .box.eu{background:linear-gradient(160deg,var(--eu),var(--eu-d))}
+#celebrate .box.w{background:linear-gradient(160deg,var(--w),var(--w-d))}
+#celebrate .trophy{font-size:5rem;animation:spin 2.5s ease-in-out infinite}
+#celebrate h2{font-size:2.2rem;margin:6px 0}
+@keyframes zoom{0%{transform:scale(.2);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes spin{0%,100%{transform:rotate(-10deg) scale(1)}50%{transform:rotate(10deg) scale(1.12)}}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:60}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#fff;color:#0b0e14;padding:10px 18px;border-radius:999px;font-weight:800;z-index:70;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+.switch{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-weight:700}
+.switch input{width:20px;height:20px;accent-color:var(--gold)}
+/* fan favorite + kid hints */
+.pcard.fav{border:2px solid var(--gold);background:linear-gradient(135deg,rgba(255,213,74,.22),var(--panel2) 60%);box-shadow:0 0 14px rgba(255,213,74,.35);grid-column:1/-1}
+.pcard.fav .nm{color:#ffe58a}
+.favtag{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;background:var(--gold);color:#1b1300;font-size:.68rem;font-weight:900;letter-spacing:.04em;text-transform:uppercase;vertical-align:middle}
+.slot.fav{box-shadow:0 0 0 2px var(--gold) inset,0 0 12px rgba(255,213,74,.35)}
+.star{color:var(--gold);text-shadow:0 0 6px rgba(255,213,74,.7)}
+.hint{border-bottom:2px dotted var(--gold);cursor:help}
+.words{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;font-size:.9rem}
+.words span{background:#0b0e14;border:1px solid var(--line);border-radius:12px;padding:6px 10px}
+.words b{color:var(--gold)}
+footer{color:var(--mut);font-size:.75rem;text-align:center;padding:20px}
+.hidden{display:none!important}
+
+/* ===== PWA / iPhone safe areas ===== */
+html{background:#07090d;-webkit-text-size-adjust:100%}
+body{-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
+button,select,.pcard,.slot{touch-action:manipulation}
+header.top{padding-top:max(14px,env(safe-area-inset-top));padding-left:max(22px,env(safe-area-inset-left));padding-right:max(22px,env(safe-area-inset-right))}
+main{padding-left:max(22px,env(safe-area-inset-left));padding-right:max(22px,env(safe-area-inset-right));padding-bottom:calc(40px + env(safe-area-inset-bottom))}
+footer{padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+.toast{bottom:calc(20px + env(safe-area-inset-bottom));max-width:calc(100vw - 32px);text-align:center;border-radius:18px}
+@media (max-width:480px){
+  header.top{padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right))}
+  main{padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right))}
+  .pool{max-height:none}
+}
+nav.steps .ni{margin-right:4px}
+@media (max-width:480px){
+  nav.steps{position:fixed;z-index:40;left:0;right:0;bottom:0;margin:0;display:grid;grid-template-columns:repeat(5,1fr);gap:2px;
+    padding:6px max(6px,env(safe-area-inset-left)) calc(6px + env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-right));
+    background:rgba(7,9,13,.94);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-top:1px solid var(--line)}
+  nav.steps button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:0;border-radius:12px;padding:6px 2px;min-height:54px;font-size:.68rem;line-height:1.1}
+  nav.steps .ni{font-size:1.35rem;margin:0}
+  nav.steps button.active{background:#fff;color:#0b0e14}
+  main{padding-bottom:calc(110px + env(safe-area-inset-bottom))}
+  footer{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+  .toast{bottom:calc(84px + env(safe-area-inset-bottom))}
+}
+@media (display-mode: standalone){ footer{font-size:.7rem} }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo"><span class="ball">🎾</span>
+    <div><h1><span class="eu">Laver</span> Cup <span class="w">Sim</span></h1>
+    <small>Team Europe vs Team World · First to 13 wins!</small></div></div>
+  <nav class="steps" id="nav">
+    <button data-go="draft"><span class="ni">📝</span><span class="nl">1 · Draft</span></button>
+    <button data-go="capt"><span class="ni">🧢</span><span class="nl">2 · Coaches</span></button>
+    <button data-go="lineup"><span class="ni">⚔️</span><span class="nl">3 · Matchups</span></button>
+    <button data-go="play"><span class="ni">▶️</span><span class="nl">4 · Play</span></button>
+    <button data-go="mc"><span class="ni">🎲</span><span class="nl">5 · 10,000</span></button>
+  </nav>
+</header>
+<main>
+  <section id="v-draft"></section>
+  <section id="v-capt" class="hidden"></section>
+  <section id="v-lineup" class="hidden"></section>
+  <section id="v-play" class="hidden"></section>
+  <section id="v-mc" class="hidden"></section>
+</main>
+<div id="celebrate"><div class="box" id="celebBox"></div></div>
+<canvas id="confetti"></canvas>
+<div class="toast" id="toast"></div>
+<footer id="foot"></footer>
+<script id="lc-engine">
+/* ===================== LAVER CUP ENGINE (pure logic, no DOM) ===================== */
+(function(root){
+"use strict";
+const RANKINGS = {
+  date: "2026-09-28",
+  label: "Official PIF ATP Rankings, week of 28 Sep 2026",
+  source: "atptour.com/en/rankings/singles and /doubles (fetched 4 Oct 2026)"
+};
+// country code -> [flag, name, team]  (E = Team Europe, W = Team World)
+// House rule (family request): Russian players, who compete under a neutral flag, play for Team WORLD in this app.
+const COUNTRIES = {
+  ITA:["🇮🇹","Italy","E"], GER:["🇩🇪","Germany","E"], ESP:["🇪🇸","Spain","E"], FRA:["🇫🇷","France","E"],
+  SRB:["🇷🇸","Serbia","E"], CZE:["🇨🇿","Czechia","E"], MON:["🇲🇨","Monaco","E"], NOR:["🇳🇴","Norway","E"],
+  BEL:["🇧🇪","Belgium","E"], GBR:["🇬🇧","Great Britain","E"], POL:["🇵🇱","Poland","E"],
+  NED:["🇳🇱","Netherlands","E"], GRE:["🇬🇷","Greece","E"], POR:["🇵🇹","Portugal","E"],
+  USA:["🇺🇸","USA","W"], RUS:["⚪","Russia (neutral flag)","W"], CAN:["🇨🇦","Canada","W"], AUS:["🇦🇺","Australia","W"], KAZ:["🇰🇿","Kazakhstan","W"],
+  ARG:["🇦🇷","Argentina","W"], BRA:["🇧🇷","Brazil","W"], CHI:["🇨🇱","Chile","W"], PER:["🇵🇪","Peru","W"]
+};
+// [rank, full name, short name, country, singles points, doubles rank (null = outside doubles top 1000)]
+const RAW = [
+ [1,"Jannik Sinner","Sinner","ITA",11000,null],
+ [2,"Alexander Zverev","Zverev","GER",9630,110],
+ [3,"Carlos Alcaraz","Alcaraz","ESP",5060,null],
+ [4,"Ben Shelton","Shelton","USA",4680,124],
+ [5,"Félix Auger-Aliassime","Auger-Aliassime","CAN",3890,581],
+ [6,"Daniil Medvedev","Medvedev","RUS",3860,349],
+ [7,"Flavio Cobolli","Cobolli","ITA",3680,355],
+ [8,"Frances Tiafoe","Tiafoe","USA",3380,null],
+ [9,"Arthur Fils","Fils","FRA",3150,null],
+ [10,"Alex de Minaur","de Minaur","AUS",3150,null],
+ [11,"Novak Djokovic","Djokovic","SRB",2980,572],
+ [12,"Taylor Fritz","Fritz","USA",2880,null],
+ [13,"Rafael Jódar","Jódar","ESP",2659,350],
+ [14,"Jakub Menšík","Menšík","CZE",2405,579],
+ [15,"Learner Tien","Tien","USA",2395,588],
+ [16,"Tommy Paul","Paul","USA",2375,null],
+ [17,"Brandon Nakashima","Nakashima","USA",2335,500],
+ [18,"Valentin Vacherot","Vacherot","MON",2250,108],
+ [19,"Luciano Darderi","Darderi","ITA",2200,147],
+ [20,"Alexander Bublik","Bublik","KAZ",2185,357],
+ [21,"Casper Ruud","Ruud","NOR",2145,574],
+ [22,"Francisco Cerúndolo","Cerúndolo","ARG",2130,141],
+ [23,"Jiří Lehečka","Lehečka","CZE",2120,353],
+ [24,"Andrey Rublev","Rublev","RUS",2085,220],
+ [25,"Lorenzo Musetti","Musetti","ITA",2010,212],
+ [26,"Alejandro Davidovich Fokina","Davidovich Fokina","ESP",1930,null],
+ [27,"Karen Khachanov","Khachanov","RUS",1800,221],
+ [28,"Alexander Blockx","Blockx","BEL",1787,883],
+ [29,"João Fonseca","Fonseca","BRA",1750,104],
+ [30,"Tomás Martín Etcheverry","Etcheverry","ARG",1590,107],
+ [31,"Alejandro Tabilo","Tabilo","CHI",1565,205],
+ [32,"Ugo Humbert","Humbert","FRA",1535,null],
+ [33,"Arthur Rinderknech","Rinderknech","FRA",1520,113],
+ [34,"Alex Michelsen","Michelsen","USA",1460,126],
+ [35,"Ignacio Buse","Buse","PER",1447,417],
+ [36,"Arthur Fery","Fery","GBR",1413,null],
+ [37,"Matteo Arnaldi","Arnaldi","ITA",1336,352],
+ [38,"Zizou Bergs","Bergs","BEL",1320,392],
+ [39,"Hubert Hurkacz","Hurkacz","POL",1285,882],
+ [40,"Cameron Norrie","Norrie","GBR",1275,null],
+ [41,"Botic van de Zandschulp","van de Zandschulp","NED",1258,203],
+ [42,"Daniel Mérida","Mérida","ESP",1210,null],
+ [43,"Luca Van Assche","Van Assche","FRA",1180,null],
+ [44,"Stefanos Tsitsipas","Tsitsipas","GRE",1165,260],
+ [45,"Mariano Navone","Navone","ARG",1155,null],
+ [46,"Denis Shapovalov","Shapovalov","CAN",1155,null],
+ [47,"Matteo Berrettini","Berrettini","ITA",1128,573],
+ [48,"Raphaël Collignon","Collignon","BEL",1078,null],
+ [49,"Nuno Borges","Borges","POR",1070,299],
+ [50,"Quentin Halys","Halys","FRA",1070,48]
+];
+// Strength model: Elo-like "Power" from ATP points (every 2.5x points ~ +160 Elo).
+function eloFromPoints(p){ return 2000 + 400*Math.log10(p/3000); }
+// Doubles power: singles power compressed toward the middle (doubles is streakier) + bonus from real doubles ranking.
+function dblBonus(r){ return r ? Math.max(0, 110*(1 - Math.log10(r)/3)) : 0; }
+const PLAYERS = RAW.map(([rank,name,short,cc,pts,drank])=>{
+  const elo = eloFromPoints(pts);
+  const delo = 2000 + 0.7*(elo-2000) + dblBonus(drank);
+  return {id:rank, rank, name, short, cc, flag:COUNTRIES[cc][0], country:COUNTRIES[cc][1], team:COUNTRIES[cc][2],
+          pts, drank, elo:Math.round(elo), delo:Math.round(delo)};
+});
+const FAVORITES = [4]; // Ben Shelton = fan favorite (display only, rating unchanged)
+PLAYERS.forEach(p=>{ p.fav = FAVORITES.includes(p.id); });
+const PBYID = {}; PLAYERS.forEach(p=>PBYID[p.id]=p);
+const REAL_2026 = { E:[2,3,7,13,14,21], W:[10,12,15,17,20,22] }; // London 2026 rosters (Zverev..Ruud / de Minaur..Cerúndolo)
+// The real 2026 rosters had no Russian players, so the neutral-flag house rule needs no swaps. Kept generic just in case:
+function eligibleRoster(side, ids){
+  const notes=[]; const out=[];
+  ids.forEach(id=>{ const p=PBYID[id]; if(p && p.team===side) out.push(id);
+    else if(p){ const sub=PLAYERS.find(q=>q.team===side && !ids.includes(q.id) && !out.includes(q.id));
+      if(sub){ out.push(sub.id); notes.push(`${p.short} swapped for ${sub.short} (${p.country} plays for Team ${p.team==="E"?"Europe":"World"} here)`); } } });
+  return {ids:out, notes};
+}
+
+/* ---------- Captains & vice-captains (small, clearly labeled effects) ---------- */
+// fx: amt = added chance to win a point; role: any | serve | return; when(situation, teamIndex)
+const CAPTAINS = [
+ {id:"noah",   name:"Yannick Noah",   flag:"🇫🇷", real:"Team Europe captain 2025–26", emoji:"🎉", power:"Party Starter",
+  desc:"+0.3% on every point on Sunday (Day 3) and in the Decider. The crowd goes wild!", fx:[{amt:.003,role:"any",when:s=>s.day>=3}]},
+ {id:"borg",   name:"Björn Borg",     flag:"🇸🇪", real:"Team Europe captain 2017–24", emoji:"🧊", power:"Ice Cold",
+  desc:"+0.5% on tiebreak and match-tiebreak points. Nerves of steel.", fx:[{amt:.005,role:"any",when:s=>s.tb}]},
+ {id:"agassi", name:"Andre Agassi",   flag:"🇺🇸", real:"Team World captain 2025–26",  emoji:"🎯", power:"Return Wizard",
+  desc:"+0.3% on return points. He might be the best returner ever!", fx:[{amt:.003,role:"return",when:()=>true}]},
+ {id:"jmac",   name:"John McEnroe",   flag:"🇺🇸", real:"Team World captain 2017–24",  emoji:"🔥", power:"Fired Up!",
+  desc:"+0.5% on every point in the match right after his team loses one. \"You cannot be serious!\"", fx:[{amt:.005,role:"any",when:(s,t)=>s.afterLoss[t]}]},
+ {id:"henman", name:"Tim Henman",     flag:"🇬🇧", real:"Team Europe vice-captain 2025–26", emoji:"🏃", power:"Serve & Volley",
+  desc:"+0.3% on serve points in doubles.", fx:[{amt:.003,role:"serve",when:s=>s.doubles}]},
+ {id:"enqvist",name:"Thomas Enqvist", flag:"🇸🇪", real:"Team Europe vice-captain 2017–24", emoji:"📋", power:"Clipboard Coach",
+  desc:"+0.3% on points in a deciding 10-point match tiebreak.", fx:[{amt:.003,role:"any",when:s=>s.mtb}]},
+ {id:"rafter", name:"Pat Rafter",     flag:"🇦🇺", real:"Team World vice-captain 2025–26", emoji:"🕊️", power:"Net Rusher",
+  desc:"+0.3% on serve points in doubles.", fx:[{amt:.003,role:"serve",when:s=>s.doubles}]},
+ {id:"pmac",   name:"Patrick McEnroe",flag:"🇺🇸", real:"Team World vice-captain 2017–24", emoji:"🩺", power:"Doubles Doctor",
+  desc:"+0.2% on every doubles point (he was a Grand Slam doubles champ).", fx:[{amt:.002,role:"any",when:s=>s.doubles}]},
+ {id:"custom", name:"You! (custom)",  flag:"⭐", real:"Your own legend", emoji:"🤗", power:"Hype Squad",
+  desc:"+0.2% on every point. Loud cheering from the bench!", fx:[{amt:.002,role:"any",when:()=>true}]},
+ {id:"none",   name:"(none)", flag:"", real:"", emoji:"", power:"", desc:"No captain effect.", fx:[]}
+];
+const CBYID = {}; CAPTAINS.forEach(c=>CBYID[c.id]=c);
+
+/* ---------- Schedule (real Laver Cup order) ---------- */
+const SCHEDULE = [
+ {n:1,day:1,type:"S"},{n:2,day:1,type:"S"},{n:3,day:1,type:"S"},{n:4,day:1,type:"D"},
+ {n:5,day:2,type:"S"},{n:6,day:2,type:"S"},{n:7,day:2,type:"S"},{n:8,day:2,type:"D"},
+ {n:9,day:3,type:"D"},{n:10,day:3,type:"S"},{n:11,day:3,type:"S"},{n:12,day:3,type:"S"}
+];
+const DAY_NAMES = {1:"Day 1 · Friday",2:"Day 2 · Saturday",3:"Day 3 · Sunday"};
+const POINTS = d=>d; // Day1=1, Day2=2, Day3=3
+const TARGET = 13;
+
+/* ---------- Analytic tennis probabilities (for calibration & displayed odds) ---------- */
+function pGame(p){ const q=1-p; const d=p*p/(p*p+q*q); return p**4*(1+4*q+10*q*q) + 20*p**3*q**3*d; }
+function pTB(pA,pB,target){ // P(A wins tiebreak) with A serving first; pA/pB = serve-point win probs
+  const memo = new Map();
+  const deuce = (pA*(1-pB))/((pA*(1-pB))+((1-pA)*pB));
+  function f(a,b){
+    if(a>=target && a-b>=2) return 1; if(b>=target && b-a>=2) return 0;
+    if(a>=target-1 && b>=target-1 && a===b) return deuce;
+    const k=a*100+b; if(memo.has(k)) return memo.get(k);
+    const i=a+b; const aServes = (Math.floor((i+1)/2)%2===0);
+    const w = aServes ? pA : 1-pB;
+    const r = w*f(a+1,b)+(1-w)*f(a,b+1); memo.set(k,r); return r;
+  }
+  return f(0,0);
+}
+function pSet(pA,pB,aFirst){
+  const gA=pGame(pA), gB=pGame(pB), tA=pTB(pA,pB,7), tB=1-pTB(pB,pA,7);
+  const memo=new Map();
+  function g(a,b,aS){
+    if((a===6&&b<=4)||a===7) return 1; if((b===6&&a<=4)||b===7) return 0;
+    if(a===6&&b===6) return aS? tA : tB;
+    const k=a*100+b*2+(aS?1:0); if(memo.has(k)) return memo.get(k);
+    const w = aS? gA : 1-gB;
+    const r = w*g(a+1,b,!aS)+(1-w)*g(a,b+1,!aS); memo.set(k,r); return r;
+  }
+  return g(0,0,aFirst);
+}
+function pMatch(pA,pB,format){ // best-of-3 with 10-pt match tiebreak (format "bo3") or one set ("set")
+  const s=(pSet(pA,pB,true)+pSet(pA,pB,false))/2;
+  if(format==="set") return s;
+  const m=(pTB(pA,pB,10)+1-pTB(pB,pA,10))/2;
+  return s*s + 2*s*(1-s)*m;
+}
+const BASE = {S:0.64, D:0.65}; // typical serve-point win rates (indoor hard)
+// Calibrate: find serve edge δ so that P(match) equals Elo expectation 1/(1+10^(-diff/400))
+const CAL = {};
+function buildCalibration(){
+  for(const type of ["S","D"]){
+    const tbl=[]; const base=BASE[type];
+    for(let d=0; d<=1200; d+=10){
+      const target = 1/(1+Math.pow(10,-d/400));
+      let lo=0, hi=Math.min(0.3, 0.99-base);
+      for(let it=0; it<26; it++){ const mid=(lo+hi)/2; if(pMatch(base+mid,base-mid,"bo3")<target) lo=mid; else hi=mid; }
+      tbl.push((lo+hi)/2);
+    }
+    CAL[type]=tbl;
+  }
+}
+buildCalibration();
+function serveProbs(eloA, eloB, type){ // returns [pA serve win, pB serve win]
+  const d=eloA-eloB, ad=Math.min(1200,Math.abs(d)), t=CAL[type];
+  const i=Math.floor(ad/10), fr=(ad-i*10)/10;
+  const delta = i>=t.length-1 ? t[t.length-1] : t[i]*(1-fr)+t[i+1]*fr;
+  const s=Math.sign(d); const base=BASE[type];
+  return [base+s*delta, base-s*delta];
+}
+function pairElo(a,b){ return (PBYID[a].delo+PBYID[b].delo)/2; }
+function sideElo(ids,type){ return type==="D" ? pairElo(ids[0],ids[1]) : PBYID[ids[0]].elo; }
+function matchWinProb(eIds,wIds,type,format){ // analytic P(Europe wins), no form noise, no captain effects
+  const [pa,pb]=serveProbs(sideElo(eIds,type),sideElo(wIds,type),type);
+  return pMatch(pa,pb,format||"bo3");
+}
+
+/* ---------- RNG ---------- */
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function gauss(rng){ let u=0,v=0; while(u===0)u=rng(); while(v===0)v=rng(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+
+/* ---------- Point-by-point match simulation ---------- */
+function makeEdgeFn(fxTeams){ // fxTeams: [[fx...],[fx...]] for Europe(0), World(1)
+  if(!fxTeams || (!fxTeams[0].length && !fxTeams[1].length)) return null;
+  return function(team, role, s){
+    let e=0; const L=fxTeams[team];
+    for(let i=0;i<L.length;i++){ const f=L[i]; if((f.role==="any"||f.role===role) && f.when(s,team)) e+=f.amt; }
+    return e;
+  };
+}
+function simMatch(pS, ctx, rng, format){
+  // pS = [Europe serve-point prob, World serve-point prob]; ctx = {day,doubles,afterLoss,edge}
+  const edge = ctx.edge;
+  const sN={day:ctx.day,doubles:ctx.doubles,afterLoss:ctx.afterLoss,tb:false,mtb:false};
+  const sT={...sN,tb:true}, sM={...sN,tb:true,mtb:true};
+  let server = rng()<0.5?0:1;
+  const ptsWon=[0,0];
+  function point(srv,s){
+    let p=pS[srv];
+    if(edge){ p += edge(srv,"serve",s) - edge(1-srv,"return",s); }
+    p = p<0.02?0.02:(p>0.98?0.98:p);
+    const w = rng()<p ? srv : 1-srv; ptsWon[w]++; return w;
+  }
+  function game(srv){ let a=0,b=0; for(;;){ if(point(srv,sN)===srv)a++; else b++; if(a>=4&&a-b>=2) return srv; if(b>=4&&b-a>=2) return 1-srv; } }
+  function tiebreak(first,target,s){ const sc=[0,0]; let i=0; for(;;){ const srv=(Math.floor((i+1)/2)%2===0)?first:1-first; const w=point(srv,s); sc[w]++; i++; if(sc[w]>=target&&sc[w]-sc[1-w]>=2) return {w,sc}; } }
+  function set(){ const g=[0,0]; for(;;){
+      if(g[0]===6&&g[1]===6){ const r=tiebreak(server,7,sT); server=1-server; g[r.w]++; return {g,tb:r.sc,w:r.w}; }
+      const w=game(server); g[w]++; server=1-server;
+      if(g[w]>=6&&g[w]-g[1-w]>=2) return {g,tb:null,w}; if(g[w]===7) return {g,tb:null,w};
+  } }
+  const sets=[]; const won=[0,0]; let mtb=null, winner;
+  if(format==="set"){ const s=set(); sets.push(s); winner=s.w; }
+  else {
+    while(won[0]<2&&won[1]<2){
+      if(won[0]===1&&won[1]===1){ const r=tiebreak(server,10,sM); mtb=r.sc; winner=r.w; break; }
+      const s=set(); sets.push(s); won[s.w]++;
+    }
+    if(winner===undefined) winner = won[0]===2?0:1;
+  }
+  return {winner, sets, mtb, ptsWon};
+}
+// NOTE: role "any" effects are applied symmetrically: they help that team on serve AND on return.
+// (edge(srv,"serve") includes "any" for the server; edge(returner,"return") includes "any" for the returner.)
+
+/* ---------- Lineup helpers ---------- */
+function emptyLineup(){ return {m:SCHEDULE.map(s=>({E:s.type==="D"?[null,null]:[null], W:s.type==="D"?[null,null]:[null]})), dec:{E:[null,null],W:[null,null]}}; }
+function pairKey(a,b){ return a<b? a+"-"+b : b+"-"+a; }
+function bestPairs(team){ // all pairs sorted by doubles power
+  const out=[]; for(let i=0;i<team.length;i++) for(let j=i+1;j<team.length;j++) out.push({a:team[i],b:team[j],e:pairElo(team[i],team[j])});
+  return out.sort((x,y)=>y.e-x.e);
+}
+function autoTeamLineup(team, rng){ // team: 6 ids. Smart if rng undefined, random otherwise.
+  const L = {S:[], D:[], dec:null};
+  let order = team.slice().sort((a,b)=>PBYID[b].elo-PBYID[a].elo);
+  if(rng){ order = shuffle(team.slice(),rng); }
+  // Days 1–2 singles: everyone plays exactly once. Day 3 singles: the top 3 (or random 3) play their 2nd.
+  const d1 = rng? order.slice(0,3) : [order[1],order[3],order[5]];
+  const d2 = rng? order.slice(3,6) : [order[0],order[2],order[4]];
+  const d3 = rng? shuffle(team.slice(),rng).slice(0,3) : [order[0],order[1],order[2]];
+  L.S = [d1,d2,d3];
+  // Doubles: 3 different pairs, at least 4 different players. Smart = maximise 1*D1 + 2*D2 + 3*D3 power.
+  const pairs = bestPairs(team);
+  let best=null;
+  if(rng){
+    for(let tries=0; tries<500 && !best; tries++){
+      const pick=shuffle(pairs.slice(),rng).slice(0,3);
+      const keys=new Set(pick.map(p=>pairKey(p.a,p.b))), ppl=new Set(pick.flatMap(p=>[p.a,p.b]));
+      if(keys.size===3 && ppl.size>=4) best=pick;
+    }
+  } else {
+    let bestScore=-1e9;
+    for(let i=0;i<pairs.length;i++) for(let j=0;j<pairs.length;j++) for(let k=0;k<pairs.length;k++){
+      if(i===j||j===k||i===k) continue;
+      const pk=[pairs[i],pairs[j],pairs[k]]; const ppl=new Set(pk.flatMap(p=>[p.a,p.b]));
+      if(ppl.size<4) continue;
+      const sc=pk[0].e*1+pk[1].e*2+pk[2].e*3; if(sc>bestScore){bestScore=sc;best=pk;}
+    }
+  }
+  L.D = best.map(p=>[p.a,p.b]);
+  L.dec = [pairs[0].a, pairs[0].b];
+  if(rng){ const p=pairs[Math.floor(rng()*pairs.length)]; L.dec=[p.a,p.b]; }
+  return L;
+}
+function applyTeamLineup(lineup, side, L){
+  const sIdx={1:0,2:0,3:0};
+  SCHEDULE.forEach((s,i)=>{
+    if(s.type==="S"){ lineup.m[i][side]=[L.S[s.day-1][sIdx[s.day]++]]; }
+    else lineup.m[i][side]=L.D[s.day-1].slice();
+  });
+  lineup.dec[side]=L.dec.slice();
+  return lineup;
+}
+function shuffle(a,rng){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(rng()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function autoPickBest(side, n, opts){ // best n eligible players by ranking
+  const pool = PLAYERS.filter(p=>p.team===side && (opts&&opts.maxRank? p.rank<=opts.maxRank : true));
+  return pool.slice(0,n).map(p=>p.id);
+}
+
+/* ---------- Validation (real Laver Cup rules) ---------- */
+const TEAMNAME = {E:"Team Europe", W:"Team World"};
+function validate(teams, lineup){
+  const errors=[], warns=[];
+  for(const side of ["E","W"]){
+    const T=TEAMNAME[side], team=teams[side];
+    const wrong=team.filter(id=>!PBYID[id]||PBYID[id].team!==side);
+    if(wrong.length) errors.push(`${T}: ${wrong.map(id=>PBYID[id]?PBYID[id].short:"?").join(", ")} can't play for this team. Go back to the Draft!`);
+    if(team.length!==6){ errors.push(`${T} needs 6 players (it has ${team.length}). Go back to the Draft!`); continue; }
+    let empty=0; const bad=new Set();
+    lineup.m.forEach((m,i)=>{ m[side].forEach(id=>{ if(id==null) empty++; else if(!team.includes(id)) bad.add(i+1); }); });
+    if(bad.size) errors.push(`${T}: match ${[...bad].join(", ")} has a player who isn't on the team any more.`);
+    if(empty) { errors.push(`${T} still has ${empty} empty spot${empty>1?"s":""}. Tap ✨ Fill it in for me!`); continue; }
+    const s12={}, sAll={}, dbl=new Set(), pairsSeen={};
+    team.forEach(id=>{s12[id]=0;sAll[id]=0;});
+    SCHEDULE.forEach((s,i)=>{
+      const ids=lineup.m[i][side];
+      if(s.type==="S"){ sAll[ids[0]]++; if(s.day<=2) s12[ids[0]]++; }
+      else {
+        if(ids[0]===ids[1]) errors.push(`${T}: match ${s.n} doubles has ${PBYID[ids[0]].short} twice. You need two different players!`);
+        ids.forEach(x=>dbl.add(x));
+        const k=pairKey(ids[0],ids[1]); (pairsSeen[k]=pairsSeen[k]||[]).push(s.n);
+      }
+    });
+    team.forEach(id=>{
+      const p=PBYID[id];
+      if(s12[id]===0) errors.push(`${T}: ${p.short} needs a singles match (1 vs 1) on Friday or Saturday. Everyone must play singles once in the first two days.`);
+      if(sAll[id]>2) errors.push(`${T}: ${p.short} has ${sAll[id]} singles matches. The limit is 2 singles per player.`);
+    });
+    if(dbl.size<4) errors.push(`${T}: only ${dbl.size} players are in the doubles (2 vs 2). At least 4 of the 6 must play doubles.`);
+    for(const k in pairsSeen) if(pairsSeen[k].length>1){ const [a,b]=k.split("-").map(Number); errors.push(`${T}: ${PBYID[a].short} / ${PBYID[b].short} play doubles together more than once (matches ${pairsSeen[k].join(" & ")}). Each pair can only play together once (except in the Decider).`); }
+    const d=lineup.dec[side];
+    if(d[0]==null||d[1]==null) warns.push(`${T}: no Decider pair picked yet. If it's 12–12 we'll use their best doubles pair.`);
+    else if(d[0]===d[1]) errors.push(`${T}: the Decider pair needs two different players.`);
+    else if(!team.includes(d[0])||!team.includes(d[1])) errors.push(`${T}: the Decider pair has a player who isn't on the team.`);
+    // friendly heads-up (allowed by the rules)
+    const busy=[];
+    SCHEDULE.forEach((s,i)=>{ if(s.type!=="D") return; const ids=lineup.m[i][side];
+      ids.forEach(id=>{ const sameDaySingles=SCHEDULE.some((t,j)=>t.day===s.day&&t.type==="S"&&lineup.m[j][side][0]===id);
+        if(sameDaySingles) busy.push(`${PBYID[id].short} (${DAY_NAMES[s.day].split(" · ")[1].slice(0,3)})`); }); });
+    if(busy.length) warns.push(`${T} busy bees 🐝 (singles + doubles on the same day, which is allowed): ${busy.join(", ")}.`);
+  }
+  return {ok:errors.length===0, errors, warns};
+}
+
+/* ---------- Cup simulation ---------- */
+function captainFx(capt, useFx){
+  if(!useFx) return [[],[]];
+  return ["E","W"].map(side=>{ const c=capt[side]||{}; return [...((CBYID[c.c]||CBYID.none).fx), ...((CBYID[c.v]||CBYID.none).fx)]; });
+}
+function simCup(teams, lineup, capt, opts){
+  opts=opts||{}; const rng=opts.rng||Math.random; const formSD = opts.formSD==null? 35 : opts.formSD;
+  const fxT = captainFx(capt, opts.fx!==false); const edge=makeEdgeFn(fxT);
+  const score=[0,0]; const results=[]; const afterLoss=[false,false];
+  const form={}; [...teams.E,...teams.W].forEach(id=>form[id]= formSD? gauss(rng)*formSD*0.6 : 0); // cup-long form
+  let clinchedAt=null;
+  function play(eIds,wIds,type,day,format){
+    const f = ()=> formSD? gauss(rng)*formSD*0.8 : 0;  // match-day wobble
+    let eE, eW;
+    if(type==="D"){ eE=pairElo(eIds[0],eIds[1])+(form[eIds[0]]+form[eIds[1]])/2+f(); eW=pairElo(wIds[0],wIds[1])+(form[wIds[0]]+form[wIds[1]])/2+f(); }
+    else { eE=PBYID[eIds[0]].elo+form[eIds[0]]+f(); eW=PBYID[wIds[0]].elo+form[wIds[0]]+f(); }
+    const pS=serveProbs(eE,eW,type);
+    return simMatch(pS,{day,doubles:type==="D",afterLoss:afterLoss.slice(),edge},rng,format);
+  }
+  for(let i=0;i<SCHEDULE.length;i++){
+    if(score[0]>=TARGET||score[1]>=TARGET) break;
+    const s=SCHEDULE[i], m=lineup.m[i];
+    const r=play(m.E,m.W,s.type,s.day,"bo3");
+    const pts=POINTS(s.day); score[r.winner]+=pts;
+    afterLoss[r.winner]=false; afterLoss[1-r.winner]=true;
+    results.push({i, n:s.n, day:s.day, type:s.type, E:m.E.slice(), W:m.W.slice(), pts, ...r, score:score.slice()});
+    if(clinchedAt==null && (score[0]>=TARGET||score[1]>=TARGET)) clinchedAt=i;
+  }
+  let decider=null, winner;
+  if(score[0]===12 && score[1]===12){
+    const dE = lineup.dec.E[0]!=null&&lineup.dec.E[1]!=null&&lineup.dec.E[0]!==lineup.dec.E[1] ? lineup.dec.E : (b=>[b.a,b.b])(bestPairs(teams.E)[0]);
+    const dW = lineup.dec.W[0]!=null&&lineup.dec.W[1]!=null&&lineup.dec.W[0]!==lineup.dec.W[1] ? lineup.dec.W : (b=>[b.a,b.b])(bestPairs(teams.W)[0]);
+    const r=play(dE,dW,"D",3,"set");
+    decider={E:dE.slice(),W:dW.slice(),...r};
+    winner=r.winner;
+  } else winner = score[0]>=TARGET?0:1;
+  return {winner, score, results, decider, clinchedAt};
+}
+
+const API = {eligibleRoster,FAVORITES,RANKINGS,COUNTRIES,PLAYERS,PBYID,REAL_2026,CAPTAINS,CBYID,SCHEDULE,DAY_NAMES,TARGET,
+  pGame,pTB,pSet,pMatch,serveProbs,matchWinProb,pairElo,bestPairs,mulberry32,simMatch,simCup,makeEdgeFn,captainFx,
+  emptyLineup,autoTeamLineup,applyTeamLineup,autoPickBest,validate,shuffle,TEAMNAME};
+root.LC = API;
+if(typeof module!=="undefined" && module.exports) module.exports=API;
+})(typeof window!=="undefined"?window:globalThis);
+</script>
+<script id="lc-app">
+/* ===================== APP / UI ===================== */
+(function(){
+"use strict";
+const {PLAYERS,PBYID,CAPTAINS,CBYID,SCHEDULE,DAY_NAMES,TEAMNAME} = LC;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const KEY="laverCupSim.v1";
+const sideCls=s=>s==="E"?"eu":"w";
+function defaults(){ return {view:"draft",teams:{E:[],W:[]},capt:{E:{c:"noah",v:"henman"},W:{c:"agassi",v:"rafter"}},
+  custom:{E:"",W:""},managers:{E:"",W:""},fx:true,extended:false,speed:"normal",lineup:LC.emptyLineup()}; }
+function load(){ try{ const s=JSON.parse(localStorage.getItem(KEY)); if(s&&s.teams&&s.lineup&&s.lineup.m&&s.lineup.m.length===12) return Object.assign(defaults(),s); }catch(e){} return null; }
+let S = load() || defaults();
+// Clean up old saved teams (e.g. Russians who used to be allowed on Team Europe)
+let MOVED=[];
+(function cleanSaved(){
+  ["E","W"].forEach(side=>{ const keep=[];
+    (S.teams[side]||[]).forEach(id=>{ const p=PBYID[id]; if(p && p.team===side && !keep.includes(id)) keep.push(id); else MOVED.push(p?p.short:String(id)); });
+    S.teams[side]=keep.slice(0,6); });
+  const ok=new Set([...S.teams.E,...S.teams.W]);
+  S.lineup.m.forEach(m=>["E","W"].forEach(sd=>{ m[sd]=(m[sd]||[]).map(x=>x!=null&&S.teams[sd].includes(x)?x:null); }));
+  ["E","W"].forEach(sd=>{ S.lineup.dec[sd]=(S.lineup.dec[sd]||[null,null]).map(x=>x!=null&&S.teams[sd].includes(x)?x:null); });
+  ["E","W"].forEach(sd=>{ ["c","v"].forEach(sl=>{ if(!CBYID[S.capt[sd][sl]]) S.capt[sd][sl]= sl==="c"?(sd==="E"?"noah":"agassi"):"none"; }); });
+})();
+function save(){ try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){} }
+function toast(t){ const el=$("#toast"); el.textContent=t; el.classList.add("show"); clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove("show"),t.length>60?5000:1800); }
+const teamsReady=()=>S.teams.E.length===6&&S.teams.W.length===6;
+const pname=id=>id==null?"?":(PBYID[id].fav?"⭐ ":"")+PBYID[id].short;
+const favHTML=id=>PBYID[id]&&PBYID[id].fav?`<span class="star" title="Fan favorite!">⭐</span> `:"";
+const sideNames=ids=>ids.map(pname).join(" / ");
+const sideFlags=ids=>ids.map(id=>PBYID[id].flag).join("");
+function captName(side,slot){ const id=S.capt[side][slot]; if(id==="custom") return S.custom[side]||"Custom legend"; return id==="none"?"":CBYID[id].name; }
+function powerBar(elo,cls){ const w=Math.max(4,Math.min(100,(elo-1780)/(2240-1780)*100)); return `<div class="bar ${cls||""}"><i style="width:${w.toFixed(0)}%"></i></div>`; }
+
+/* ---------- navigation ---------- */
+function canGo(v){
+  if(v==="draft") return true;
+  if(v==="capt"||v==="lineup") return teamsReady();
+  return teamsReady() && LC.validate(S.teams,S.lineup).ok;
+}
+function go(v){
+  if(!canGo(v)){
+    if(!teamsReady()) toast("First draft 6 players for each team! 🎾");
+    else toast("Fix the matchups first (see the messages) ✋");
+    if(v!=="draft"&&!teamsReady()) v="draft"; else if(v==="play"||v==="mc") v="lineup";
+  }
+  S.view=v; save(); render();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function render(){
+  ["draft","capt","lineup","play","mc"].forEach(v=>$("#v-"+v).classList.toggle("hidden",S.view!==v));
+  document.querySelectorAll("#nav button").forEach(b=>{ b.classList.toggle("active",b.dataset.go===S.view); });
+  ({draft:renderDraft,capt:renderCapt,lineup:renderLineup,play:renderPlay,mc:renderMC})[S.view]();
+}
+
+/* ---------- tennis words (kid hints) ---------- */
+const WORDS = `<div class="words">
+  <span>🎾 <b>Singles</b> = 1 vs 1</span><span>🤝 <b>Doubles</b> = 2 vs 2</span>
+  <span><b>Set</b> = first to win 6 games (by 2)</span>
+  <span><b>Tiebreak</b> = at 6–6 in a set, a race to 7 points (small number = loser's points)</span>
+  <span><b>[10]</b> = match tiebreak: if it's 1 set each, a race to 10 points instead of a 3rd set</span>
+  <span>⚡ <b>Decider</b> = a bonus doubles match if it's 12–12</span>
+  <span>🏆 Win = 1 point Friday, 2 Saturday, 3 Sunday. <b>First to 13 wins!</b></span></div>`;
+
+/* ---------- 1. DRAFT ---------- */
+function playerCard(p,side,full){
+  return `<button class="pcard ${full?"dis":""} ${p.fav?"fav":""}" data-add="${p.id}" data-side="${side}" ${full?"disabled":""} title="${p.fav?"⭐ Fan favorite! ":""}${esc(p.name)} · ${esc(p.country)} · ${p.pts.toLocaleString()} ATP pts">
+    <span class="flag">${p.flag}</span>
+    <span class="info"><div class="nm">${p.fav?'<span class="star">⭐</span> ':""}${esc(p.name)}${p.fav?'<span class="favtag">Fan favorite</span>':""}</div>
+      <div class="meta">⚡ ${p.elo} singles · 🤝 ${p.delo} doubles</div>${powerBar(p.elo)}</span>
+    <span class="rk">#${p.rank}</span></button>`;
+}
+function teamCol(side){
+  const maxRank=S.extended?50:30, team=S.teams[side], cls=sideCls(side), full=team.length>=6;
+  const pool=PLAYERS.filter(p=>p.team===side && !team.includes(p.id) && (p.rank<=maxRank||p.fav)).sort((a,b)=>(b.fav-a.fav)||(a.rank-b.rank));
+  const avg = team.length? Math.round(team.reduce((a,id)=>a+PBYID[id].elo,0)/team.length):0;
+  let slots=""; for(let i=0;i<6;i++){ const id=team[i];
+    slots += id? `<div class="slot filled ${PBYID[id].fav?"fav":""}" data-rm="${id}" data-side="${side}"><span style="font-size:1.4rem">${PBYID[id].flag}</span><span class="nm">${favHTML(id)}${esc(PBYID[id].short)}</span>${PBYID[id].fav?'<span class="favtag" style="margin:0">Fan favorite</span>':""}<span class="small mut">#${PBYID[id].rank} · ⚡${PBYID[id].elo}</span></div>`
+              : `<div class="slot">Player ${i+1}</div>`; }
+  const eligible = PLAYERS.filter(p=>p.team===side && p.rank<=30).length;
+  return `<div class="panel team-col ${cls}">
+    <div class="team-head"><h2 class="team-name">${side==="E"?"🇪🇺 Team Europe":"🌎 Team World"}</h2>
+      <span class="tag ${cls}">${team.length}/6 picked${avg?` · avg ⚡${avg}`:""}</span></div>
+    <div class="slots">${slots}</div>
+    <div class="row">
+      <button class="${side==="E"?"btn-eu":"btn-w"}" data-act="best6" data-side="${side}">⭐ Pick the best 6</button>
+      <button data-act="rand6" data-side="${side}">🎲 Surprise me!</button>
+      <button data-act="clear" data-side="${side}">🧹 Start over</button>
+    </div>
+    <h3 style="margin-top:14px">Players you can pick <span class="small">(${pool.length} here · ${eligible} ${side==="E"?"from Europe":"from the rest of the world"} in the top 30)</span></h3>
+    <div class="pool">${pool.map(p=>playerCard(p,side,full)).join("")||`<div class="mut">Everyone's picked!</div>`}</div>
+  </div>`;
+}
+function renderDraft(){
+  $("#v-draft").innerHTML = `
+  <div class="row" style="justify-content:space-between;margin-bottom:12px">
+    <div><h2>Step 1 · Draft your teams</h2>
+    <div class="mut" style="font-size:.95rem">Tap a player to put them on a team. Tap them again to take them off.<br>
+    Players from Europe play for <b style="color:var(--eu-l)">Team Europe</b>. Everyone else plays for <b style="color:var(--w-l)">Team World</b>.<br>
+    <span class="small">Our house rule: Russian players (⚪ neutral flag) play for <b style="color:var(--w-l)">Team World</b>.</span><br>
+    ⚡ = how strong in <span class="hint" title="Singles = 1 player vs 1 player">singles (1 vs 1)</span> · 🤝 = how strong in <span class="hint" title="Doubles = 2 players vs 2 players">doubles (2 vs 2)</span> · #3 = world ranking</div>
+    <div class="small mut">Players = the world's top 30 (${esc(LC.RANKINGS.label)}).</div></div>
+    <div class="row">
+      <label class="switch"><input type="checkbox" id="ext" ${S.extended?"checked":""}> Show more players (#31–50)</label>
+      <button data-act="real2026">🇬🇧 Use the real 2026 teams</button>
+    </div>
+  </div>
+  <div class="grid2">${teamCol("E")}${teamCol("W")}</div>
+  <div class="row" style="justify-content:flex-end;margin-top:14px">
+    <button class="btn-gold btn-big" data-go="capt" ${teamsReady()?"":"disabled"}>Next: Captains →</button></div>`;
+}
+function removeFromLineup(id){
+  S.lineup.m.forEach(m=>["E","W"].forEach(sd=>{ m[sd]=m[sd].map(x=>x===id?null:x); }));
+  ["E","W"].forEach(sd=>{ S.lineup.dec[sd]=S.lineup.dec[sd].map(x=>x===id?null:x); });
+}
+function setTeam(side,ids){
+  S.teams[side].forEach(id=>{ if(!ids.includes(id)) removeFromLineup(id); });
+  S.teams[side]=ids.slice(0,6);
+}
+
+/* ---------- 2. CAPTAINS ---------- */
+function captOptions(side,slot){
+  const other = slot==="c"?"v":"c"; const taken=new Set();
+  ["E","W"].forEach(sd=>["c","v"].forEach(sl=>{ if(!(sd===side&&sl===slot)){ const id=S.capt[sd][sl]; if(id!=="none"&&id!=="custom") taken.add(id);} }));
+  return CAPTAINS.filter(c=>!taken.has(c.id) && !(slot==="c"&&c.id==="none"))
+    .map(c=>`<option value="${c.id}" ${S.capt[side][slot]===c.id?"selected":""}>${c.flag} ${esc(c.name)}${c.real?" · "+esc(c.real):""}</option>`).join("");
+}
+function fxCard(side,slot){
+  const id=S.capt[side][slot]; const c=CBYID[id]; if(!c||id==="none") return "";
+  const nm = id==="custom" ? (S.custom[side]||"Custom legend") : c.name;
+  return `<div class="capt-card" style="${S.fx?"":"opacity:.45"}"><div class="pw">${c.emoji} ${esc(c.power)} <span class="tag ${sideCls(side)}">${slot==="c"?"Coach":"Helper coach"}</span></div>
+    <div class="small mut" style="margin:2px 0 4px">${esc(nm)}${c.real&&id!=="custom"?" · real "+esc(c.real):""}</div>
+    <div>${esc(c.desc)}</div></div>`;
+}
+function renderCapt(){
+  const col=side=>`<div class="panel team-col ${sideCls(side)}">
+    <div class="team-head"><h2 class="team-name">${side==="E"?"🇪🇺 Team Europe":"🌎 Team World"}</h2></div>
+    <div class="grid2" style="margin-top:10px;gap:10px">
+      <label class="f">Coach (captain)<select data-capt="c" data-side="${side}">${captOptions(side,"c")}</select></label>
+      <label class="f">Helper coach (vice-captain)<select data-capt="v" data-side="${side}">${captOptions(side,"v")}</select></label>
+    </div>
+    ${(S.capt[side].c==="custom"||S.capt[side].v==="custom")?`<label class="f" style="margin-top:8px">Your coach's name<input type="text" maxlength="24" data-custom="${side}" value="${esc(S.custom[side])}" placeholder="e.g. Coach Dad"></label>`:""}
+    <label class="f" style="margin-top:8px">Who's the boss of this team?<input type="text" maxlength="24" data-mgr="${side}" value="${esc(S.managers[side])}" placeholder="${side==="E"?"e.g. Brett":"e.g. your son"}"></label>
+    ${fxCard(side,"c")}${fxCard(side,"v")}
+    <div class="small mut" style="margin-top:8px">Roster: ${S.teams[side].map(id=>PBYID[id].flag+" "+esc(PBYID[id].short)).join(", ")}</div>
+  </div>`;
+  $("#v-capt").innerHTML=`
+  <div class="row" style="justify-content:space-between;margin-bottom:12px">
+    <div><h2>Step 2 · Pick your coaches</h2>
+    <div class="mut" style="font-size:.95rem">Pick a tennis legend to coach each team. Every coach has a tiny ✨ power that helps a little in special moments.<br>It's small on purpose, so it only matters in super close matches.</div></div>
+    <label class="switch"><input type="checkbox" id="fxon" ${S.fx?"checked":""}> Coach powers ON</label>
+  </div>
+  <div class="grid2">${col("E")}${col("W")}</div>
+  <div class="row" style="justify-content:space-between;margin-top:14px">
+    <button data-go="draft">← Back to draft</button>
+    <button class="btn-gold btn-big" data-go="lineup">Next: Matchups →</button></div>`;
+}
+
+/* ---------- 3. LINEUPS / MATCHUPS ---------- */
+function pSelect(i,side,k,val){
+  const team=S.teams[side];
+  return `<select data-m="${i}" data-side="${side}" data-k="${k}" aria-label="${TEAMNAME[side]} player">
+    <option value="">${side==="E"?"🇪🇺":"🌎"} pick a player…</option>
+    ${team.map(id=>`<option value="${id}" ${val===id?"selected":""}>${PBYID[id].flag} ${PBYID[id].fav?"⭐ ":""}${esc(PBYID[id].short)} (#${PBYID[id].rank})</option>`).join("")}</select>`;
+}
+function probBar(eIds,wIds,type,format){
+  if(eIds.some(x=>x==null)||wIds.some(x=>x==null)) return `<span class="mut small">pick players to see who's likely to win</span>`;
+  const p=LC.matchWinProb(eIds,wIds,type,format); const e=Math.round(p*100);
+  return `<div class="pbar" title="Chance to win before captain powers & match-day form"><b class="e" style="width:${Math.max(e,14)}%">${e}%</b><b class="wd" style="width:${Math.max(100-e,14)}%">${100-e}%</b></div>`;
+}
+function renderLineup(){
+  const v=LC.validate(S.teams,S.lineup);
+  let days="";
+  for(const d of [1,2,3]){
+    days+=`<div class="day"><div class="day-h"><h3 style="margin:0">${DAY_NAMES[d]}</h3><span class="pts">${d} point${d>1?"s":""} per win</span></div>`;
+    SCHEDULE.forEach((s,i)=>{ if(s.day!==d) return; const m=S.lineup.m[i];
+      days+=`<div class="mrow"><div class="lbl">Match ${s.n}<small>${s.type==="D"?"🤝 Doubles":"🎾 Singles"}</small></div>
+        <div class="side eu">${m.E.map((id,k)=>pSelect(i,"E",k,id)).join("")}</div><div class="vs">vs</div>
+        <div class="side w">${m.W.map((id,k)=>pSelect(i,"W",k,id)).join("")}</div>
+        <div class="prob">${probBar(m.E,m.W,s.type)}</div></div>`;
+    });
+    days+=`</div>`;
+  }
+  const dec=S.lineup.dec;
+  days+=`<div class="day"><div class="day-h"><h3 style="margin:0">⚡ The Decider</h3><span class="pts">only if it's 12–12! One bonus set of doubles, and the winner takes the cup</span></div>
+    <div class="mrow" style="border-style:dashed"><div class="lbl">Decider<small>🤝 one set</small></div>
+    <div class="side eu">${dec.E.map((id,k)=>pSelect("dec","E",k,id)).join("")}</div><div class="vs">vs</div>
+    <div class="side w">${dec.W.map((id,k)=>pSelect("dec","W",k,id)).join("")}</div>
+    <div class="prob">${probBar(dec.E,dec.W,"D","set")}</div></div></div>`;
+  const usage=side=>{ const t=S.teams[side]; return `<div class="usage"><b class="small" style="color:var(--${side==="E"?"eu-l":"w-l"})">${TEAMNAME[side]}:</b>`+t.map(id=>{
+      let s12=0,sA=0,dd=0; SCHEDULE.forEach((s,i)=>{ const ids=S.lineup.m[i][side]; if(s.type==="S"&&ids[0]===id){sA++; if(s.day<=2)s12++;} if(s.type==="D"&&ids.includes(id)) dd++; });
+      const bad=s12===0||sA>2; return `<span class="chip ${bad?"bad":""}">${PBYID[id].flag} ${PBYID[id].fav?"⭐ ":""}${esc(PBYID[id].short)}: ${sA} singles · ${dd} doubles</span>`; }).join("")+`</div>`; };
+  const msgs = v.errors.length ? v.errors.map(e=>`<div class="msg err">✋ ${esc(e)}</div>`).join("")
+     : `<div class="msg ok">✅ Everything follows the rules. Ready to play! 🎾</div>`;
+  $("#v-lineup").innerHTML=`
+  <div class="row" style="justify-content:space-between">
+    <div><h2>Step 3 · Who plays who?</h2>
+    <div class="mut" style="font-size:.95rem">The rules: 1) everyone plays singles once on Friday or Saturday, 2) nobody plays more than 2 singles, 3) at least 4 players play doubles, 4) a doubles pair can't play together twice.<br>The blue and red bars show each team's chance to win that match.</div>
+    ${WORDS}</div>
+  </div>
+  <div class="ctrl">
+    <button class="btn-gold" data-act="autoAll">✨ Fill it in for me</button>
+    <button class="btn-eu" data-act="autoE">✨ Just Europe</button>
+    <button class="btn-w" data-act="autoW">✨ Just World</button>
+    <button data-act="randAll">🎲 Mix it up</button>
+    <button data-act="clearLineup">🧹 Start over</button>
+  </div>
+  <div class="panel"><div class="msgs" style="margin-top:0">${msgs}${v.warns.map(w=>`<div class="msg warn">💡 ${esc(w)}</div>`).join("")}</div>
+    <div style="margin-top:10px">${usage("E")}${usage("W")}</div></div>
+  ${days}
+  <div class="row" style="justify-content:space-between;margin-top:14px">
+    <button data-go="capt">← Captains</button>
+    <div class="row"><button class="btn-gold btn-big" data-go="play" ${v.ok?"":"disabled"}>▶ Play it out</button>
+    <button class="btn-big" data-go="mc" ${v.ok?"":"disabled"}>🚀 Run 10,000 cups</button></div></div>`;
+}
+
+/* ---------- 4. PLAY IT OUT ---------- */
+let P=null; // {cup, shown, busy, auto, decShown}
+const SPEEDS={slow:1100,normal:650,fast:220,instant:0};
+function newCup(){ P={cup:LC.simCup(S.teams,S.lineup,S.capt,{fx:S.fx}), shown:0, busy:false, auto:false, decShown:false, revealSets:{}}; }
+function shownScore(){ if(!P||P.shown===0) return [0,0]; return P.cup.results[P.shown-1].score.slice(); }
+function prog(n){ let h=""; for(let i=1;i<=13;i++) h+=`<i class="${i<=n?"on":""}"></i>`; return `<div class="prog13">${h}</div>`; }
+function boardHTML(){
+  const sc=shownScore(); const nextIdx = P.shown<P.cup.results.length ? P.cup.results[P.shown].i : null;
+  let dayTxt = nextIdx==null ? (P.cup.decider && !P.decShown ? "THE DECIDER!" : "Final") : DAY_NAMES[SCHEDULE[nextIdx].day];
+  if(P.shown===0) dayTxt = "Ready! " + DAY_NAMES[1];
+  const mgr=side=>S.managers[side]?` · boss: ${esc(S.managers[side])}`:"";
+  return `<div class="board">
+    <div class="side eu"><div><div class="tn">Team Europe</div><div class="cap">Capt. ${esc(captName("E","c"))}${mgr("E")}</div>${prog(sc[0])}</div><div class="sc" id="scE">${sc[0]}</div></div>
+    <div class="mid"><div class="ft hint" title="The first team to get 13 points wins the Laver Cup">First to 13 wins</div><div class="dy">${dayTxt}</div><div class="ft" style="margin-top:4px">${P.shown}/12 played</div></div>
+    <div class="side w"><div class="sc" id="scW">${sc[1]}</div><div><div class="tn">Team World</div><div class="cap">Capt. ${esc(captName("W","c"))}${mgr("W")}</div>${prog(sc[1])}</div></div>
+  </div>`;
+}
+function scoreLines(r,eIds,wIds,nSets){ // nSets: how many sets to reveal (incl. mtb)
+  const cols=[]; r.sets.forEach(s=>cols.push({e:s.g[0],w:s.g[1],tb:s.tb}));
+  if(r.mtb) cols.push({e:r.mtb[0],w:r.mtb[1],mtb:true});
+  const vis=cols.slice(0,nSets); const done=nSets>=cols.length;
+  const cell=(c,side,j)=>{ const mine=side===0?c.e:c.w, theirs=side===0?c.w:c.e; const won=mine>theirs;
+    let sup=""; if(c.tb && !won) sup=`<sup>${side===0?c.tb[0]:c.tb[1]}</sup>`;
+    return `<div class="g ${won?"wg":"lg"} ${j===nSets-1?"pop":""}">${c.mtb?"["+mine+"]":mine}${sup}</div>`; };
+  const line=(side)=>{ const ids=side===0?eIds:wIds; const won=done&&r.winner===side;
+    let cells=""; for(let j=0;j<3;j++) cells+= vis[j]? cell(vis[j],side,j) : `<div class="g"></div>`;
+    return `<div class="sline ${side===0?"eu":"w"} ${won?"won":""}"><div class="stripe"></div><div class="who">${sideFlags(ids)} ${esc(sideNames(ids))}</div>${cells}<div class="tick">${won?"✔":""}</div></div>`; };
+  return line(0)+line(1);
+}
+function commentary(r,eIds,wIds,type,format){
+  const wIdsW = r.winner===0?eIds:wIds; const W=sideNames(wIdsW); const team=r.winner===0?"Europe":"World";
+  const pre=LC.matchWinProb(eIds,wIds,type,format); const pw=r.winner===0?pre:1-pre;
+  let t="";
+  const bagel=r.sets.some(s=>s.g[r.winner]===6&&s.g[1-r.winner]===0);
+  const comeback=r.sets.length>=2&&r.sets[0].w!==r.winner;
+  if(r.mtb) t= r.mtb[r.winner]>10 ? `😱 Match-tiebreak THRILLER! ${W} edge it ${r.mtb[r.winner]}–${r.mtb[1-r.winner]}!` : `😮 Down to the match tiebreak, and ${W} win it ${r.mtb[r.winner]}–${r.mtb[1-r.winner]}!`;
+  else if(bagel) t=`🥯 A bagel! ${W} serve${wIdsW.length>1?"":"s"} up a 6–0 set for Team ${team}.`;
+  else if(r.sets.every(s=>s.tb)) t=`🔥 Two tiebreaks! ${W} hold${wIdsW.length>1?"":"s"} their nerve.`;
+  else if(r.sets.some(s=>s.tb)) t=`💪 Tight one! ${W} win${wIdsW.length>1?"":"s"} it with a tiebreak.`;
+  else t=`🚀 ${W} cruise${wIdsW.length>1?"":"s"} in straight sets for Team ${team}.`;
+  if(comeback && r.mtb) t=`🔄 What a comeback! `+t;
+  if(pw<0.35) t=`🚨 UPSET! (${Math.round(pw*100)}% chance) `+t;
+  return t;
+}
+function cardHTML(i){
+  const s=SCHEDULE[i]; const m=S.lineup.m[i];
+  const resIdx=P.cup.results.findIndex(r=>r.i===i);
+  const r=resIdx>=0?P.cup.results[resIdx]:null;
+  const shown = resIdx>=0 && resIdx<P.shown;
+  const live = resIdx===P.shown && P.busy;
+  const notNeeded = !r;
+  const nSets = shown ? 99 : (live ? (P.revealSets[i]||0) : 0);
+  const cls = notNeeded && P.shown>=P.cup.results.length ? "notneeded" : (shown||live? (live?"live":"") : "pending");
+  let body;
+  if(r && (shown||live)) body = scoreLines(r,m.E,m.W,nSets) + `<div class="comm">${shown?esc(commentary(r,m.E,m.W,s.type)):"🎾 Playing…"}</div>`;
+  else body = `<div class="sline eu"><div class="stripe"></div><div class="who">${sideFlags(m.E)} ${esc(sideNames(m.E))}</div></div>
+               <div class="sline w"><div class="stripe"></div><div class="who">${sideFlags(m.W)} ${esc(sideNames(m.W))}</div></div>
+               <div class="comm mut">${notNeeded&&P.shown>=P.cup.results.length?"Not needed. The cup is already won!":"Coming up…"}</div>`;
+  return `<div class="mcard ${cls}" id="mc${i}"><div class="mh"><span>Match ${s.n} · ${s.type==="D"?"Doubles":"Singles"} · ${DAY_NAMES[s.day].split(" · ")[1]}</span><span class="pt">${s.day} pt${s.day>1?"s":""}</span></div>${body}</div>`;
+}
+function deciderHTML(){
+  const d=P.cup.decider; if(!d || P.shown<P.cup.results.length) return "";
+  const live=P.busy && !P.decShown; const n= P.decShown?99:(P.revealSets.dec||0);
+  return `<div class="panel" style="margin-top:14px;border:2px solid var(--gold)"><h2>⚡ THE DECIDER · 12–12!</h2><div class="mut small">It is a tie! One bonus set of doubles, and the winner takes the Laver Cup!</div>
+    <div class="mcard ${live?"live":""}" style="margin-top:8px">${scoreLines(d,d.E,d.W,n)}<div class="comm">${P.decShown?esc(commentary(d,d.E,d.W,"D","set")):"🎾 Playing…"}</div></div></div>`;
+}
+function renderPlay(){
+  if(!P) newCup();
+  const done = P.shown>=P.cup.results.length && (!P.cup.decider||P.decShown);
+  $("#v-play").innerHTML=`
+  ${boardHTML()}
+  <div class="ctrl">
+    <button class="btn-gold btn-big" data-act="next" ${done||P.busy?"disabled":""}>▶ Next match</button>
+    <button class="btn-big" data-act="auto" ${done?"disabled":""}>${P.auto?"⏸ Pause":"⏩ Play them all"}</button>
+    <button data-act="skip" ${done?"disabled":""}>⏭ Skip to the end</button>
+    <button data-act="newcup">🔄 Play again</button>
+    <label class="f" style="flex-direction:row;align-items:center;gap:8px">Speed
+      <select id="speed">${Object.keys(SPEEDS).map(k=>`<option value="${k}" ${S.speed===k?"selected":""}>${k}</option>`).join("")}</select></label>
+    <span class="mut small">Coach powers: ${S.fx?"ON":"OFF"}</span>
+  </div>
+  ${WORDS}<div class="matches">${SCHEDULE.map((s,i)=>cardHTML(i)).join("")}</div>
+  ${deciderHTML()}
+  <div class="row" style="margin-top:14px"><button data-go="lineup">← Change matchups</button><button data-go="mc">🚀 Run 10,000 cups</button></div>`;
+}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function revealNext(){
+  if(!P||P.busy) return;
+  const delay=SPEEDS[S.speed]??650;
+  if(P.shown<P.cup.results.length){
+    const r=P.cup.results[P.shown]; P.busy=true; P.revealSets[r.i]=0; renderPlay();
+    document.getElementById("mc"+r.i)?.scrollIntoView({block:"nearest",behavior:delay?"smooth":"auto"});
+    const n=r.sets.length+(r.mtb?1:0);
+    for(let k=1;k<=n;k++){ if(delay) await sleep(delay); P.revealSets[r.i]=k; if(S.view==="play") renderPlay(); }
+    P.shown++; P.busy=false; renderPlay(); bump(r.winner);
+    if(P.cup.clinchedAt===r.i && !P.cup.decider){ P.auto=false; renderPlay(); celebrate(); return; }
+  } else if(P.cup.decider && !P.decShown){
+    P.busy=true; P.revealSets.dec=0; renderPlay();
+    const d=P.cup.decider; const n=d.sets.length;
+    for(let k=1;k<=n;k++){ await sleep(Math.max(delay,600)); P.revealSets.dec=k; renderPlay(); }
+    P.decShown=true; P.busy=false; P.auto=false; renderPlay(); celebrate(); return;
+  }
+  if(P.auto){ await sleep(delay?delay*1.3:30); if(P.auto) revealNext(); }
+}
+function bump(w){ const el=document.getElementById(w===0?"scE":"scW"); if(el){ el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump"); } }
+function cupMVP(cup){
+  const pts={}; const add=(ids,p)=>ids.forEach(id=>pts[id]=(pts[id]||0)+p);
+  cup.results.forEach(r=>add(r.winner===0?r.E:r.W,r.pts)); if(cup.decider) add(cup.decider.winner===0?cup.decider.E:cup.decider.W,3);
+  const team = cup.winner===0?S.teams.E:S.teams.W;
+  return team.slice().sort((a,b)=>(pts[b]||0)-(pts[a]||0))[0];
+}
+function celebrate(){
+  const c=P.cup, side=c.winner===0?"E":"W"; const mvp=cupMVP(c);
+  const scoreTxt = c.decider ? `12–12, won in the Decider!` : `${c.score[0]}–${c.score[1]}`;
+  $("#celebBox").className="box "+sideCls(side);
+  $("#celebBox").innerHTML=`<div class="trophy">🏆</div><h2>TEAM ${side==="E"?"EUROPE":"WORLD"} WINS!</h2>
+   <div style="font-size:1.4rem;font-weight:900">${scoreTxt}</div>
+   <div style="margin-top:8px">Captain ${esc(captName(side,"c"))} lifts the Laver Cup! ${S.managers[side]?`<br>Congrats, ${esc(S.managers[side])}! 🎉`:""}</div>
+   <div style="margin-top:6px">🏅 Star of the cup: ${PBYID[mvp].flag} <b>${PBYID[mvp].fav?"⭐ ":""}${esc(PBYID[mvp].name)}</b></div>
+   <div class="row" style="justify-content:center;margin-top:16px"><button class="btn-gold" data-act="newcupClose">🔄 Play another cup</button><button data-act="closeCeleb">Close</button></div>`;
+  $("#celebrate").classList.add("show"); confetti(side);
+}
+function confetti(side){
+  const cv=$("#confetti"), ctx=cv.getContext("2d"); cv.width=innerWidth; cv.height=innerHeight;
+  const cols= side==="E"?["#1f5fe0","#7fb0ff","#ffffff","#ffd54a"]:["#e0262f","#ff8b8f","#ffffff","#ffd54a"];
+  const parts=Array.from({length:220},()=>({x:Math.random()*cv.width,y:-20-Math.random()*cv.height*0.6,vx:(Math.random()-.5)*4,vy:2+Math.random()*4,r:4+Math.random()*6,c:cols[Math.floor(Math.random()*cols.length)],a:Math.random()*6,va:(Math.random()-.5)*.3,ball:Math.random()<.08}));
+  const t0=performance.now();
+  (function frame(t){ ctx.clearRect(0,0,cv.width,cv.height);
+    parts.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; p.vy+=.03; p.a+=p.va;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.a);
+      if(p.ball){ ctx.font="22px serif"; ctx.fillText("🎾",-11,8); } else { ctx.fillStyle=p.c; ctx.fillRect(-p.r/2,-p.r/4,p.r,p.r/2); }
+      ctx.restore(); });
+    if(t-t0<4500) requestAnimationFrame(frame); else ctx.clearRect(0,0,cv.width,cv.height);
+  })(t0);
+}
+
+/* ---------- 5. MONTE CARLO ---------- */
+let M=null; // results
+function renderMC(){
+  const running = M&&M.running;
+  let out=`<div class="row" style="justify-content:space-between"><div><h2>Step 5 · Play 10,000 pretend cups</h2>
+    <div class="mut" style="font-size:.95rem">The computer plays your cup again and again, super fast, with lucky and unlucky bounces. Which team wins more often?</div></div>
+    <div class="row"><select id="mcN">${[1000,10000,50000].map(n=>`<option value="${n}" ${((M&&M.N)||10000)===n?"selected":""}>${n.toLocaleString()} cups</option>`).join("")}</select>
+    <button class="btn-gold btn-big" data-act="runMC" ${running?"disabled":""}>🚀 Go!</button></div></div>`;
+  if(running) out+=`<div class="panel" style="margin-top:14px"><b>Simulating… ${M.done.toLocaleString()} / ${M.N.toLocaleString()}</b><div class="bar" style="height:14px;margin-top:8px"><i style="width:${(M.done/M.N*100).toFixed(1)}%;background:linear-gradient(90deg,var(--eu),var(--w))"></i></div></div>`;
+  if(M && M.done>0) out+=mcResults();
+  else if(!running) out+=`<div class="panel" style="margin-top:14px;text-align:center;padding:40px"><div style="font-size:3rem">🎲</div><div class="mut">Press <b>Go!</b> to play ${((M&&M.N)||10000).toLocaleString()} Laver Cups.</div></div>`;
+  out+=`<div class="row" style="margin-top:14px"><button data-go="lineup">← Change matchups</button><button data-go="play">▶ Play one cup</button></div>`;
+  $("#v-mc").innerHTML=out;
+}
+function mcResults(){
+  const n=M.done, pe=M.wins[0]/n, pw=M.wins[1]/n;
+  const buckets=Object.entries(M.scores).map(([k,v])=>{ const q=k.split("|"); const dec=q[2]==="D";
+    const win = dec ? (q[3]==="E"?0:1) : (+q[0]>+q[1]?0:1);
+    const margin = dec ? (win===0?0.25:-0.25) : (+q[0]-(+q[1]));
+    return {e:+q[0],w:+q[1],dec,win,key:k,v,margin}; });
+  buckets.sort((x,y)=>y.margin-x.margin || y.e-x.e);
+  const maxV=Math.max(...buckets.map(b=>b.v));
+  const top=buckets.slice().sort((a,b)=>b.v-a.v)[0];
+  const lab=b=>b.dec?`12–12 D${b.win===0?"🇪🇺":"🌎"}`:`${b.e}–${b.w}`;
+  const hist=`<div class="hist">${buckets.map(b=>`<div class="hb ${b.win===0?"e":"wd"}" title="${lab(b)}: ${(b.v/n*100).toFixed(1)}%"><span>${(b.v/n*100).toFixed(1)}</span><i style="height:${(b.v/maxV*85).toFixed(1)}%"></i></div>`).join("")}</div>
+    <div class="hlabels">${buckets.map(b=>`<div>${lab(b)}</div>`).join("")}</div>`;
+  const rows=SCHEDULE.map((s,i)=>{ const m=S.lineup.m[i]; const st=M.match[i]; const pre=LC.matchWinProb(m.E,m.W,s.type);
+    const simE= st.played? st.e/st.played : null;
+    return `<tr><td>${s.n}</td><td>${DAY_NAMES[s.day].split(" · ")[1].slice(0,3)} · ${s.day}pt</td>
+      <td style="color:var(--eu-l)">${sideFlags(m.E)} ${esc(sideNames(m.E))}</td><td style="color:var(--w-l)">${sideFlags(m.W)} ${esc(sideNames(m.W))}</td>
+      <td><div class="pbar" style="width:150px"><b class="e" style="width:${Math.max(pre*100,14)}%">${Math.round(pre*100)}%</b><b class="wd" style="width:${Math.max(100-pre*100,14)}%">${Math.round(100-pre*100)}%</b></div></td>
+      <td>${simE==null?"–":Math.round(simE*100)+"%"}</td>
+      <td><span class="pgw"><i style="width:${(st.played/n*100).toFixed(0)}%"></i></span> ${(st.played/n*100).toFixed(0)}%</td>
+      <td>${(st.clinch/n*100).toFixed(1)}%</td></tr>`; }).join("");
+  const mvp=Object.entries(M.ppts).map(([id,v])=>({id:+id,v:v/n})).sort((a,b)=>b.v-a.v);
+  const mvpRows=mvp.map(o=>{ const p=PBYID[o.id]; return `<tr><td>${p.flag} ${favHTML(p.id)}${esc(p.name)}</td><td><span class="tag ${sideCls(p.team)}">${p.team==="E"?"Europe":"World"}</span></td><td>⚡${p.elo} · 🤝${p.delo}</td><td><b>${o.v.toFixed(2)}</b></td></tr>`; }).join("");
+  return `<div class="panel" style="margin-top:14px">
+    <div class="big-pct"><div class="e" style="width:${Math.max(pe*100,12)}%">🇪🇺 ${(pe*100).toFixed(1)}%</div><div class="wd" style="width:${Math.max(pw*100,12)}%">${(pw*100).toFixed(1)}% 🌎</div></div>
+    <div class="stats">
+      <div class="stat"><span class="mut small">Team Europe wins</span><b style="color:var(--eu-l)">${M.wins[0].toLocaleString()}</b></div>
+      <div class="stat"><span class="mut small">Team World wins</span><b style="color:var(--w-l)">${M.wins[1].toLocaleString()}</b></div>
+      <div class="stat"><span class="mut small">Score that happened most</span><b>${lab(top)}</b><span class="small mut">${(top.v/n*100).toFixed(1)}% of cups</span></div>
+      <div class="stat"><span class="mut small">Tied 12–12, went to the Decider</span><b>${(M.dec/n*100).toFixed(1)}%</b></div>
+      <div class="stat"><span class="mut small">Super close! Won in the very last match</span><b>${((M.match[11].clinch+M.dec)/n*100).toFixed(1)}%</b></div>
+      <div class="stat"><span class="mut small">Matches played (on average)</span><b>${(M.mplayed/n).toFixed(1)}</b></div>
+    </div>
+    <h3>Final scores: how often each one happened (%)</h3>${hist}
+    <div class="small mut" style="margin-top:22px">Blue = Europe wins, red = World wins. Scores are Europe–World. "12–12 D" = won in the Decider.</div>
+  </div>
+  <div class="panel" style="margin-top:14px;overflow-x:auto"><h3>Match by match</h3>
+    <table class="t"><thead><tr><th>#</th><th>Day</th><th>Europe</th><th>World</th><th>Chance before the match</th><th>Europe won</th><th>How often it was played</th><th>Won the cup with this match</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="small mut" style="margin-top:6px">"Pre-match chance" = pure ratings. "Europe won (sim)" also includes captain powers and match-day form. Later matches aren't played once a team reaches 13.</div></div>
+  <div class="panel" style="margin-top:14px;overflow-x:auto"><h3>🏅 Who wins the most points for their team? (average per cup)</h3>
+    <table class="t"><thead><tr><th>Player</th><th>Team</th><th>Power</th><th>Avg points / cup</th></tr></thead><tbody>${mvpRows}</tbody></table></div>`;
+}
+function runMC(N){
+  M={N,done:0,running:true,wins:[0,0],dec:0,scores:{},match:SCHEDULE.map(()=>({played:0,e:0,clinch:0})),ppts:{},mplayed:0};
+  [...S.teams.E,...S.teams.W].forEach(id=>M.ppts[id]=0);
+  const teams=JSON.parse(JSON.stringify(S.teams)), lineup=JSON.parse(JSON.stringify(S.lineup)), capt=JSON.parse(JSON.stringify(S.capt)), fx=S.fx;
+  const t0=performance.now();
+  function chunk(){
+    const end=Math.min(N,M.done+400);
+    for(;M.done<end;M.done++){
+      const c=LC.simCup(teams,lineup,capt,{fx});
+      M.wins[c.winner]++; M.mplayed+=c.results.length;
+      const key = c.decider? `12|12|D|${c.winner===0?"E":"W"}` : `${c.score[0]}|${c.score[1]}|N`;
+      M.scores[key]=(M.scores[key]||0)+1;
+      if(c.decider){ M.dec++; (c.decider.winner===0?c.decider.E:c.decider.W).forEach(id=>M.ppts[id]+=3); }
+      c.results.forEach(r=>{ const st=M.match[r.i]; st.played++; if(r.winner===0) st.e++; (r.winner===0?r.E:r.W).forEach(id=>M.ppts[id]+=r.pts); });
+      if(c.clinchedAt!=null) M.match[c.clinchedAt].clinch++;
+    }
+    if(M.done<N){ if(S.view==="mc") renderMC(); setTimeout(chunk,0); }
+    else { M.running=false; M.ms=performance.now()-t0; if(S.view==="mc") renderMC(); toast(`Done! ${N.toLocaleString()} cups in ${(M.ms/1000).toFixed(1)}s`); }
+  }
+  renderMC(); setTimeout(chunk,20);
+}
+
+/* ---------- events ---------- */
+document.addEventListener("click",e=>{
+  const t=e.target.closest("[data-go],[data-act],[data-add],[data-rm]"); if(!t) return;
+  if(t.dataset.go){ go(t.dataset.go); return; }
+  if(t.dataset.add){ const side=t.dataset.side; if(S.teams[side].length<6){ S.teams[side].push(+t.dataset.add); save(); renderDraft(); } return; }
+  if(t.dataset.rm){ const side=t.dataset.side, id=+t.dataset.rm; setTeam(side,S.teams[side].filter(x=>x!==id)); save(); renderDraft(); return; }
+  const a=t.dataset.act, side=t.dataset.side;
+  switch(a){
+    case "best6": setTeam(side,LC.autoPickBest(side,6,{maxRank:S.extended?50:30})); P=null; break;
+    case "rand6": { const pool=PLAYERS.filter(p=>p.team===side&&p.rank<=(S.extended?50:30)).map(p=>p.id); setTeam(side,LC.shuffle(pool,Math.random).slice(0,6)); P=null; break; }
+    case "clear": setTeam(side,[]); P=null; break;
+    case "real2026": { const re=LC.eligibleRoster("E",LC.REAL_2026.E), rw=LC.eligibleRoster("W",LC.REAL_2026.W);
+      setTeam("E",re.ids); setTeam("W",rw.ids); S.capt={E:{c:"noah",v:"henman"},W:{c:"agassi",v:"rafter"}}; P=null;
+      const notes=[...re.notes,...rw.notes]; toast(notes.length? "Real 2026 teams are in! Note: "+notes.join("; ") : "Real 2026 teams are in! 🇬🇧"); break; }
+    case "autoAll": case "autoE": case "autoW":
+      ["E","W"].forEach(sd=>{ if(a==="autoAll"||a==="auto"+sd) LC.applyTeamLineup(S.lineup,sd,LC.autoTeamLineup(S.teams[sd])); }); P=null; toast("✨ All filled in!"); break;
+    case "randAll": ["E","W"].forEach(sd=>LC.applyTeamLineup(S.lineup,sd,LC.autoTeamLineup(S.teams[sd],Math.random))); P=null; toast("🎲 Mixed up (and still fair)!"); break;
+    case "clearLineup": S.lineup=LC.emptyLineup(); P=null; break;
+    case "next": revealNext(); return;
+    case "auto": P.auto=!P.auto; renderPlay(); if(P.auto) revealNext(); return;
+    case "skip": P.auto=false; P.busy=false; P.shown=P.cup.results.length; if(P.cup.decider) P.decShown=true; renderPlay(); celebrate(); return;
+    case "newcup": newCup(); renderPlay(); return;
+    case "newcupClose": $("#celebrate").classList.remove("show"); newCup(); renderPlay(); return;
+    case "closeCeleb": $("#celebrate").classList.remove("show"); return;
+    case "runMC": runMC(+$("#mcN").value); return;
+  }
+  save(); render();
+});
+document.addEventListener("change",e=>{
+  const t=e.target;
+  if(t.id==="ext"){ S.extended=t.checked; save(); renderDraft(); return; }
+  if(t.id==="fxon"){ S.fx=t.checked; P=null; save(); renderCapt(); return; }
+  if(t.id==="speed"){ S.speed=t.value; save(); return; }
+  if(t.dataset.capt){ S.capt[t.dataset.side][t.dataset.capt]=t.value; P=null; save(); renderCapt(); return; }
+  if(t.dataset.m!=null){ const v=t.value===""?null:+t.value; const sd=t.dataset.side, k=+t.dataset.k;
+    if(t.dataset.m==="dec") S.lineup.dec[sd][k]=v; else S.lineup.m[+t.dataset.m][sd][k]=v; P=null; save(); renderLineup(); return; }
+});
+document.addEventListener("input",e=>{
+  const t=e.target;
+  if(t.dataset.custom){ S.custom[t.dataset.custom]=t.value.slice(0,24); save(); return; }
+  if(t.dataset.mgr){ S.managers[t.dataset.mgr]=t.value.slice(0,24); save(); return; }
+});
+$("#celebrate").addEventListener("click",e=>{ if(e.target.id==="celebrate") $("#celebrate").classList.remove("show"); });
+$("#foot").innerHTML=`Player data: ${esc(LC.RANKINGS.label)} (${esc(LC.RANKINGS.source)}). Power ratings are derived from ranking points, a fun model and not official.<br>Laver Cup format: 3 days · 1/2/3 points per win · first to 13 · 12–12 goes to a one-set doubles Decider. Made for fun 🎾`;
+if(!canGo(S.view)) S.view = teamsReady()?"lineup":"draft";
+if(MOVED.length){ save(); setTimeout(()=>toast(`House rule update: ${MOVED.join(", ")} now play${MOVED.length>1?"":"s"} for Team World, so we took them off Team Europe. Pick someone new!`),300); }
+render();
+window.__LCAPP={get S(){return S;}, get P(){return P;}, get M(){return M;}, go, runMC, revealNext, newCup:()=>{newCup();renderPlay();}};
+})();
+</script>
+<script>
+if("serviceWorker" in navigator && /^https?:$/.test(location.protocol)){
+  window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(e=>console.warn("SW registration failed",e)));
+}
+</script>
+</body></html>
