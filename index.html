@@ -140,6 +140,7 @@ label.f select,label.f input{width:100%;max-width:100%;font-size:1rem;color:var(
 .sline.eu .stripe{background:var(--eu)} .sline.w .stripe{background:var(--w)}
 .sline .who{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sline.won .who{font-weight:900}
+.sline .who.swapped{white-space:normal;line-height:1.25;font-size:.92em}
 .sline .g{text-align:center;font-weight:800;font-variant-numeric:tabular-nums;font-size:1.05rem;position:relative}
 .sline .g sup{font-size:.6rem;color:var(--mut);position:absolute;top:-2px;right:-2px}
 .sline .g.wg{color:#fff} .sline .g.lg{color:#8590a6}
@@ -188,6 +189,15 @@ table.t th{color:var(--mut);font-size:.72rem;letter-spacing:.06em;text-transform
 .pcard.fav .nm{color:#ffe58a}
 .favtag{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;background:var(--gold);color:#1b1300;font-size:.68rem;font-weight:900;letter-spacing:.04em;text-transform:uppercase;vertical-align:middle}
 .slot.fav{box-shadow:0 0 0 2px var(--gold) inset,0 0 12px rgba(255,213,74,.35)}
+.altslot{margin:0 0 12px;flex-direction:column;gap:4px;min-height:58px;border-color:var(--gold)!important;border-style:dashed!important}
+.altslot .alttag{font-weight:900;color:var(--gold);font-size:.8rem;letter-spacing:.02em}
+.altslot.filled{background:rgba(255,213,74,.08)!important}
+button.mini{padding:6px 10px;font-size:.8rem;min-height:0}
+.inj{font-size:.85em;filter:saturate(1.2)}
+.injset select{width:auto;padding:6px 8px}
+.injnote{margin-top:6px;padding:6px 9px;border-radius:10px;background:rgba(255,213,74,.12);border:1px solid rgba(255,213,74,.4);font-size:.86rem;line-height:1.35}
+.mcard.hurt{border-color:rgba(255,213,74,.6)}
+.usage.alts{align-items:center}
 .star{color:var(--gold);text-shadow:0 0 6px rgba(255,213,74,.7)}
 .hint{border-bottom:2px dotted var(--gold);cursor:help}
 .words{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;font-size:.9rem}
@@ -252,6 +262,11 @@ nav.steps .ni{margin-right:4px}
 /* ===================== LAVER CUP ENGINE (pure logic, no DOM) ===================== */
 (function(root){
 "use strict";
+/* ===== INJURIES: easy-to-edit settings =====
+   Base chance that a player gets hurt during one match (0.03 = 3%). The UI dropdown overrides it (Off/1%/3%/5%/10%).
+   Each player's real chance = base × their injuryRisk multiplier (last column of RAW below). */
+const INJURY_CHANCE_PER_MATCH = 0.03;
+const INJURY_TIERS = {LOW:0.5, NORMAL:1.0, HIGH:1.5, VERY_HIGH:2.0};
 const RANKINGS = {
   date: "2026-09-28",
   label: "Official PIF ATP Rankings, week of 28 Sep 2026",
@@ -267,73 +282,74 @@ const COUNTRIES = {
   USA:["🇺🇸","USA","W"], RUS:["⚪","Russia (neutral flag)","W"], CAN:["🇨🇦","Canada","W"], AUS:["🇦🇺","Australia","W"], KAZ:["🇰🇿","Kazakhstan","W"],
   ARG:["🇦🇷","Argentina","W"], BRA:["🇧🇷","Brazil","W"], CHI:["🇨🇱","Chile","W"], PER:["🇵🇪","Peru","W"]
 };
-// [rank, full name, short name, country, singles points, doubles rank (null = outside doubles top 1000)]
+// [rank, full name, short name, country, singles points, doubles rank (null = outside doubles top 1000), injuryRisk multiplier]
+// injuryRisk tiers: LOW 0.5 / NORMAL 1.0 / HIGH 1.5 / VERY_HIGH 2.0, from quick web research on 2025-26 injuries (Oct 2026). Edit freely.
 const RAW = [
- [1,"Jannik Sinner","Sinner","ITA",11000,null],
- [2,"Alexander Zverev","Zverev","GER",9630,110],
- [3,"Carlos Alcaraz","Alcaraz","ESP",5060,null],
- [4,"Ben Shelton","Shelton","USA",4680,124],
- [5,"Félix Auger-Aliassime","Auger-Aliassime","CAN",3890,581],
- [6,"Daniil Medvedev","Medvedev","RUS",3860,349],
- [7,"Flavio Cobolli","Cobolli","ITA",3680,355],
- [8,"Frances Tiafoe","Tiafoe","USA",3380,null],
- [9,"Arthur Fils","Fils","FRA",3150,null],
- [10,"Alex de Minaur","de Minaur","AUS",3150,null],
- [11,"Novak Djokovic","Djokovic","SRB",2980,572],
- [12,"Taylor Fritz","Fritz","USA",2880,null],
- [13,"Rafael Jódar","Jódar","ESP",2659,350],
- [14,"Jakub Menšík","Menšík","CZE",2405,579],
- [15,"Learner Tien","Tien","USA",2395,588],
- [16,"Tommy Paul","Paul","USA",2375,null],
- [17,"Brandon Nakashima","Nakashima","USA",2335,500],
- [18,"Valentin Vacherot","Vacherot","MON",2250,108],
- [19,"Luciano Darderi","Darderi","ITA",2200,147],
- [20,"Alexander Bublik","Bublik","KAZ",2185,357],
- [21,"Casper Ruud","Ruud","NOR",2145,574],
- [22,"Francisco Cerúndolo","Cerúndolo","ARG",2130,141],
- [23,"Jiří Lehečka","Lehečka","CZE",2120,353],
- [24,"Andrey Rublev","Rublev","RUS",2085,220],
- [25,"Lorenzo Musetti","Musetti","ITA",2010,212],
- [26,"Alejandro Davidovich Fokina","Davidovich Fokina","ESP",1930,null],
- [27,"Karen Khachanov","Khachanov","RUS",1800,221],
- [28,"Alexander Blockx","Blockx","BEL",1787,883],
- [29,"João Fonseca","Fonseca","BRA",1750,104],
- [30,"Tomás Martín Etcheverry","Etcheverry","ARG",1590,107],
- [31,"Alejandro Tabilo","Tabilo","CHI",1565,205],
- [32,"Ugo Humbert","Humbert","FRA",1535,null],
- [33,"Arthur Rinderknech","Rinderknech","FRA",1520,113],
- [34,"Alex Michelsen","Michelsen","USA",1460,126],
- [35,"Ignacio Buse","Buse","PER",1447,417],
- [36,"Arthur Fery","Fery","GBR",1413,null],
- [37,"Matteo Arnaldi","Arnaldi","ITA",1336,352],
- [38,"Zizou Bergs","Bergs","BEL",1320,392],
- [39,"Hubert Hurkacz","Hurkacz","POL",1285,882],
- [40,"Cameron Norrie","Norrie","GBR",1275,null],
- [41,"Botic van de Zandschulp","van de Zandschulp","NED",1258,203],
- [42,"Daniel Mérida","Mérida","ESP",1210,null],
- [43,"Luca Van Assche","Van Assche","FRA",1180,null],
- [44,"Stefanos Tsitsipas","Tsitsipas","GRE",1165,260],
- [45,"Mariano Navone","Navone","ARG",1155,null],
- [46,"Denis Shapovalov","Shapovalov","CAN",1155,null],
- [47,"Matteo Berrettini","Berrettini","ITA",1128,573],
- [48,"Raphaël Collignon","Collignon","BEL",1078,null],
- [49,"Nuno Borges","Borges","POR",1070,299],
- [50,"Quentin Halys","Halys","FRA",1070,48]
+ [1,"Jannik Sinner","Sinner","ITA",11000,null,INJURY_TIERS.HIGH], // injury: knee: no matches after winning Wimbledon (Jul 2026), season ended for knee treatment (atptour.com 6 Oct 2026)
+ [2,"Alexander Zverev","Zverev","GER",9630,110,INJURY_TIERS.HIGH], // injury: withdrew Rotterdam 2026 and Hamburg 2026 (back injury) (atptour.com)
+ [3,"Carlos Alcaraz","Alcaraz","ESP",5060,null,INJURY_TIERS.HIGH], // injury: right-wrist tenosynovitis: missed Madrid, Rome, Roland Garros, Queen's, Wimbledon, Canada, Cincinnati 2026 (atptour.com, Reuters)
+ [4,"Ben Shelton","Shelton","USA",4680,124,INJURY_TIERS.HIGH], // injury: retired at US Open 2025 with shoulder injury (missed Laver Cup 2025); withdrew Laver Cup + Tokyo 2026, "took a toll on my body" (lavercup.com, tennisuptodate.com)
+ [5,"Félix Auger-Aliassime","Auger-Aliassime","CAN",3890,581,INJURY_TIERS.NORMAL], // injury: one injury withdrawal found: Montreal 2026, back (ubitennis.net)
+ [6,"Daniil Medvedev","Medvedev","RUS",3860,349,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [7,"Flavio Cobolli","Cobolli","ITA",3680,355,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [8,"Frances Tiafoe","Tiafoe","USA",3380,null,INJURY_TIERS.NORMAL], // injury: one injury withdrawal found: Lyon, leg (tennisnow.com)
+ [9,"Arthur Fils","Fils","FRA",3150,null,INJURY_TIERS.VERY_HIGH], // injury: back stress fracture May 2025 (out ~8 months), retired in Rome 2026 + withdrew Roland Garros 2026 (hip) (atptour.com, rolandgarros.com)
+ [10,"Alex de Minaur","de Minaur","AUS",3150,null,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [11,"Novak Djokovic","Djokovic","SRB",2980,572,INJURY_TIERS.HIGH], // injury: right shoulder: missed Miami and withdrew from Madrid 2026 (atptour.com)
+ [12,"Taylor Fritz","Fritz","USA",2880,null,INJURY_TIERS.NORMAL], // injury: one injury withdrawal found: Monte-Carlo 2026 (atptour.com)
+ [13,"Rafael Jódar","Jódar","ESP",2659,350,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [14,"Jakub Menšík","Menšík","CZE",2405,579,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [15,"Learner Tien","Tien","USA",2395,588,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [16,"Tommy Paul","Paul","USA",2375,null,INJURY_TIERS.HIGH], // injury: elbow injury at US Open 2026, withdrew Laver Cup 2026; also missed Laver Cup 2025 injured (lavercup.com, sportingnews.com)
+ [17,"Brandon Nakashima","Nakashima","USA",2335,500,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [18,"Valentin Vacherot","Vacherot","MON",2250,108,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [19,"Luciano Darderi","Darderi","ITA",2200,147,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [20,"Alexander Bublik","Bublik","KAZ",2185,357,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [21,"Casper Ruud","Ruud","NOR",2145,574,INJURY_TIERS.HIGH], // injury: retired in Cincinnati 2026, then withdrew from US Open 2026 with back injury (atptour.com)
+ [22,"Francisco Cerúndolo","Cerúndolo","ARG",2130,141,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [23,"Jiří Lehečka","Lehečka","CZE",2120,353,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [24,"Andrey Rublev","Rublev","RUS",2085,220,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [25,"Lorenzo Musetti","Musetti","ITA",2010,212,INJURY_TIERS.VERY_HIGH], // injury: retired in AO 2026 QF (leg), withdrew Roland Garros + Wimbledon 2026 (thigh), withdrew Tokyo 2026 (finger fracture) (ausopen.com, atptour.com)
+ [26,"Alejandro Davidovich Fokina","Davidovich Fokina","ESP",1930,null,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [27,"Karen Khachanov","Khachanov","RUS",1800,221,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [28,"Alexander Blockx","Blockx","BEL",1787,883,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [29,"João Fonseca","Fonseca","BRA",1750,104,INJURY_TIERS.NORMAL], // injury: one injury withdrawal found: US Open 2026 (abdominal) (atptour.com)
+ [30,"Tomás Martín Etcheverry","Etcheverry","ARG",1590,107,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [31,"Alejandro Tabilo","Tabilo","CHI",1565,205,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [32,"Ugo Humbert","Humbert","FRA",1535,null,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [33,"Arthur Rinderknech","Rinderknech","FRA",1520,113,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [34,"Alex Michelsen","Michelsen","USA",1460,126,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [35,"Ignacio Buse","Buse","PER",1447,417,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [36,"Arthur Fery","Fery","GBR",1413,null,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [37,"Matteo Arnaldi","Arnaldi","ITA",1336,352,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [38,"Zizou Bergs","Bergs","BEL",1320,392,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [39,"Hubert Hurkacz","Hurkacz","POL",1285,882,INJURY_TIERS.VERY_HIGH], // injury: meniscus surgery 2024 + right-knee surgery Jul 2025, season shut down (atptour.com, tennis.com)
+ [40,"Cameron Norrie","Norrie","GBR",1275,null,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [41,"Botic van de Zandschulp","van de Zandschulp","NED",1258,203,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [42,"Daniel Mérida","Mérida","ESP",1210,null,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [43,"Luca Van Assche","Van Assche","FRA",1180,null,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [44,"Stefanos Tsitsipas","Tsitsipas","GRE",1165,260,INJURY_TIERS.HIGH], // injury: back injury late 2025: withdrew Shanghai, said he considered retiring (atptour.com, BBC)
+ [45,"Mariano Navone","Navone","ARG",1155,null,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [46,"Denis Shapovalov","Shapovalov","CAN",1155,null,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [47,"Matteo Berrettini","Berrettini","ITA",1128,573,INJURY_TIERS.VERY_HIGH], // injury: 2026: withdrew AO (oblique/illness), retired at Roland Garros (hip), withdrew Gstaad + Kitzbühel (chronic hip) (atptour.com, Yahoo, tenniswatcher.com)
+ [48,"Raphaël Collignon","Collignon","BEL",1078,null,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [49,"Nuno Borges","Borges","POR",1070,299,INJURY_TIERS.NORMAL], // injury: no notable injury found in a quick search: left at normal (unverified)
+ [50,"Quentin Halys","Halys","FRA",1070,48,INJURY_TIERS.NORMAL] // injury: no notable injury found in a quick search: left at normal (unverified)
 ];
 // Strength model: Elo-like "Power" from ATP points (every 2.5x points ~ +160 Elo).
 function eloFromPoints(p){ return 2000 + 400*Math.log10(p/3000); }
 // Doubles power: singles power compressed toward the middle (doubles is streakier) + bonus from real doubles ranking.
 function dblBonus(r){ return r ? Math.max(0, 110*(1 - Math.log10(r)/3)) : 0; }
-const PLAYERS = RAW.map(([rank,name,short,cc,pts,drank])=>{
+const PLAYERS = RAW.map(([rank,name,short,cc,pts,drank,injuryRisk])=>{
   const elo = eloFromPoints(pts);
   const delo = 2000 + 0.7*(elo-2000) + dblBonus(drank);
   return {id:rank, rank, name, short, cc, flag:COUNTRIES[cc][0], country:COUNTRIES[cc][1], team:COUNTRIES[cc][2],
-          pts, drank, elo:Math.round(elo), delo:Math.round(delo)};
+          pts, drank, injuryRisk: injuryRisk==null?1:injuryRisk, elo:Math.round(elo), delo:Math.round(delo)};
 });
 const FAVORITES = [4]; // Ben Shelton = fan favorite (display only, rating unchanged)
 PLAYERS.forEach(p=>{ p.fav = FAVORITES.includes(p.id); });
 const PBYID = {}; PLAYERS.forEach(p=>PBYID[p.id]=p);
-const REAL_2026 = { E:[2,3,7,13,14,21], W:[10,12,15,17,20,22] }; // London 2026 rosters (Zverev..Ruud / de Minaur..Cerúndolo)
+const REAL_2026 = { E:[2,3,7,13,14,21], W:[10,12,15,17,20,22], alts:{E:36, W:35} }; // alternates: Arthur Fery (E), Ignacio Buse (W); // London 2026 rosters (Zverev..Ruud / de Minaur..Cerúndolo)
 // The real 2026 rosters had no Russian players, so the neutral-flag house rule needs no swaps. Kept generic just in case:
 function eligibleRoster(side, ids){
   const notes=[]; const out=[];
@@ -454,36 +470,72 @@ function makeEdgeFn(fxTeams){ // fxTeams: [[fx...],[fx...]] for Europe(0), World
     return e;
   };
 }
+function injuryPoint(chance, rng, format){
+  // Points until this player gets hurt (Infinity = not this match). Per-point hazard chosen so the chance over a
+  // typical match (~138 points best-of-3, ~65 in a one-set Decider) is about `chance`.
+  if(!(chance>0)) return Infinity;
+  const N = format==="set" ? 65 : 138;   // average points in a simulated match
+  const h = -Math.log(1-Math.min(chance,0.95))/N;
+  return Math.ceil(Math.log(1-rng())/-h);
+}
 function simMatch(pS, ctx, rng, format){
-  // pS = [Europe serve-point prob, World serve-point prob]; ctx = {day,doubles,afterLoss,edge}
-  const edge = ctx.edge;
+  // pS = [Europe serve-point prob, World serve-point prob]; ctx = {day,doubles,afterLoss,edge, inj?}
+  // ctx.inj (optional) = {E:[ids],W:[ids], chanceOf(id), onInjury(team,id) -> replacement id or null, recompute(E,W) -> pS}
+  const edge = ctx.edge, inj = ctx.inj;
   const sN={day:ctx.day,doubles:ctx.doubles,afterLoss:ctx.afterLoss,tb:false,mtb:false};
   const sT={...sN,tb:true}, sM={...sN,tb:true,mtb:true};
   let server = rng()<0.5?0:1;
   const ptsWon=[0,0];
+  const sets=[]; let curG=[0,0], curTB=null, played=0;
+  let on=null, due=null; const events=[];
+  if(inj){ on=[inj.E.slice(),inj.W.slice()]; due=[on[0].map(id=>injuryPoint(inj.chanceOf(id),rng,format)), on[1].map(id=>injuryPoint(inj.chanceOf(id),rng,format))]; }
+  function checkInjury(){
+    for(let t=0;t<2;t++) for(let k=0;k<on[t].length;k++){
+      if(due[t][k]<=played){
+        const hurt=on[t][k]; const at={sets:sets.map(x=>x.g.slice()), g:curG.slice(), tb:curTB?curTB.slice():null};
+        const sub=inj.onInjury(t,hurt,on[t]);
+        if(sub==null){ events.push({type:"retire",team:t,hurt,at}); throw {retire:t}; }
+        on[t][k]=sub; due[t][k]=played+injuryPoint(inj.chanceOf(sub),rng,format);
+        events.push({type:"sub",team:t,hurt,sub,at});
+        pS = inj.recompute(on[0],on[1]);
+      }
+    }
+  }
   function point(srv,s){
     let p=pS[srv];
     if(edge){ p += edge(srv,"serve",s) - edge(1-srv,"return",s); }
     p = p<0.02?0.02:(p>0.98?0.98:p);
-    const w = rng()<p ? srv : 1-srv; ptsWon[w]++; return w;
+    const w = rng()<p ? srv : 1-srv; ptsWon[w]++;
+    if(inj){ played++; checkInjury(); }
+    return w;
   }
   function game(srv){ let a=0,b=0; for(;;){ if(point(srv,sN)===srv)a++; else b++; if(a>=4&&a-b>=2) return srv; if(b>=4&&b-a>=2) return 1-srv; } }
-  function tiebreak(first,target,s){ const sc=[0,0]; let i=0; for(;;){ const srv=(Math.floor((i+1)/2)%2===0)?first:1-first; const w=point(srv,s); sc[w]++; i++; if(sc[w]>=target&&sc[w]-sc[1-w]>=2) return {w,sc}; } }
-  function set(){ const g=[0,0]; for(;;){
+  function tiebreak(first,target,s){ const sc=[0,0]; curTB=sc; let i=0; for(;;){ const srv=(Math.floor((i+1)/2)%2===0)?first:1-first; const w=point(srv,s); sc[w]++; i++; if(sc[w]>=target&&sc[w]-sc[1-w]>=2){ curTB=null; return {w,sc}; } } }
+  function set(){ const g=[0,0]; curG=g; for(;;){
       if(g[0]===6&&g[1]===6){ const r=tiebreak(server,7,sT); server=1-server; g[r.w]++; return {g,tb:r.sc,w:r.w}; }
       const w=game(server); g[w]++; server=1-server;
       if(g[w]>=6&&g[w]-g[1-w]>=2) return {g,tb:null,w}; if(g[w]===7) return {g,tb:null,w};
   } }
-  const sets=[]; const won=[0,0]; let mtb=null, winner;
-  if(format==="set"){ const s=set(); sets.push(s); winner=s.w; }
-  else {
-    while(won[0]<2&&won[1]<2){
-      if(won[0]===1&&won[1]===1){ const r=tiebreak(server,10,sM); mtb=r.sc; winner=r.w; break; }
-      const s=set(); sets.push(s); won[s.w]++;
+  const won=[0,0]; let mtb=null, winner, retired=null;
+  try{
+    if(format==="set"){ const s=set(); sets.push(s); winner=s.w; }
+    else {
+      while(won[0]<2&&won[1]<2){
+        if(won[0]===1&&won[1]===1){ curG=[0,0]; const r=tiebreak(server,10,sM); mtb=r.sc; winner=r.w; break; }
+        const s=set(); sets.push(s); won[s.w]++;
+      }
+      if(winner===undefined) winner = won[0]===2?0:1;
     }
-    if(winner===undefined) winner = won[0]===2?0:1;
+  }catch(e){
+    if(e && e.retire!=null){ retired=e.retire; winner=1-e.retire;
+      // keep the unfinished set / match tiebreak so the card can show where it stopped
+      if(curTB && won[0]===1 && won[1]===1 && format!=="set") mtb=curTB.slice();
+      else sets.push({g:curG.slice(),tb:curTB?curTB.slice():null,w:null,partial:true});
+    } else throw e;
   }
-  return {winner, sets, mtb, ptsWon};
+  const res={winner, sets, mtb, ptsWon};
+  if(inj){ res.events=events; res.retired=retired; res.finishers={E:on[0].slice(),W:on[1].slice()}; }
+  return res;
 }
 // NOTE: role "any" effects are applied symmetrically: they help that team on serve AND on return.
 // (edge(srv,"serve") includes "any" for the server; edge(returner,"return") includes "any" for the returner.)
@@ -593,40 +645,83 @@ function captainFx(capt, useFx){
   return ["E","W"].map(side=>{ const c=capt[side]||{}; return [...((CBYID[c.c]||CBYID.none).fx), ...((CBYID[c.v]||CBYID.none).fx)]; });
 }
 function simCup(teams, lineup, capt, opts){
+  // teams = {E:[6 ids], W:[6 ids], alts?:{E:id|null, W:id|null}}
+  // opts.injury = base injury chance per player per match (default INJURY_CHANCE_PER_MATCH; 0 = off)
   opts=opts||{}; const rng=opts.rng||Math.random; const formSD = opts.formSD==null? 35 : opts.formSD;
+  const base = opts.injury==null ? INJURY_CHANCE_PER_MATCH : opts.injury;
+  const alts = teams.alts||{E:null,W:null};
   const fxT = captainFx(capt, opts.fx!==false); const edge=makeEdgeFn(fxT);
   const score=[0,0]; const results=[]; const afterLoss=[false,false];
-  const form={}; [...teams.E,...teams.W].forEach(id=>form[id]= formSD? gauss(rng)*formSD*0.6 : 0); // cup-long form
+  const SIDES=["E","W"];
+  // Injury bookkeeping per team: who is out for the cup, whom the alternate is covering, whether the alternate is hurt.
+  const st=SIDES.map(sd=>({alt:alts[sd]!=null?alts[sd]:null, out:new Set(), altFor:null, altHurt:false}));
+  const injuries=[]; // {team, hurt, sub|null, match}
+  const form={}; [...teams.E,...teams.W,...SIDES.map(sd=>alts[sd]).filter(x=>x!=null)].forEach(id=>form[id]= formSD? gauss(rng)*formSD*0.6 : 0); // cup-long form
+  const chanceOf=id=>base>0 ? Math.min(0.9, base*(PBYID[id].injuryRisk||1)) : 0;
   let clinchedAt=null;
-  function play(eIds,wIds,type,day,format){
+  // Resolve a scheduled player: themselves if healthy, the alternate if the alternate is covering them, else null (forfeit).
+  function resolve(t,id){ const T=st[t]; if(!T.out.has(id)) return id; if(T.altFor===id && !T.altHurt) return T.alt; return null; }
+  function play(eIds,wIds,type,day,format,label){
     const f = ()=> formSD? gauss(rng)*formSD*0.8 : 0;  // match-day wobble
-    let eE, eW;
-    if(type==="D"){ eE=pairElo(eIds[0],eIds[1])+(form[eIds[0]]+form[eIds[1]])/2+f(); eW=pairElo(wIds[0],wIds[1])+(form[wIds[0]]+form[wIds[1]])/2+f(); }
-    else { eE=PBYID[eIds[0]].elo+form[eIds[0]]+f(); eW=PBYID[wIds[0]].elo+form[wIds[0]]+f(); }
-    const pS=serveProbs(eE,eW,type);
-    return simMatch(pS,{day,doubles:type==="D",afterLoss:afterLoss.slice(),edge},rng,format);
+    const fE=f(), fW=f();
+    const eloOf=(ids,fw)=> type==="D" ? pairElo(ids[0],ids[1])+(form[ids[0]]+form[ids[1]])/2+fw : PBYID[ids[0]].elo+form[ids[0]]+fw;
+    const recompute=(E,W)=>serveProbs(eloOf(E,fE),eloOf(W,fW),type);
+    const pS=recompute(eIds,wIds);
+    const ctx={day,doubles:type==="D",afterLoss:afterLoss.slice(),edge};
+    if(base>0){
+      ctx.inj={E:eIds,W:wIds,chanceOf,recompute,
+        onInjury(t,hurt,onCourt){
+          const T=st[t];
+          if(hurt===T.alt){ T.altHurt=true; injuries.push({team:t,hurt,sub:null,match:label}); return null; }  // the sub got hurt: retire
+          T.out.add(hurt);
+          const altFree = T.alt!=null && !T.altHurt && T.altFor==null && !onCourt.includes(T.alt);
+          if(altFree){ T.altFor=hurt; injuries.push({team:t,hurt,sub:T.alt,match:label}); return T.alt; }
+          injuries.push({team:t,hurt,sub:null,match:label}); return null;               // no sub left: retire
+        }};
+    }
+    return simMatch(pS,ctx,rng,format);
   }
+  function forfeitResult(t,why){ return {winner:1-t, sets:[], mtb:null, ptsWon:[0,0], forfeit:t, forfeitWhy:why, events:[], retired:null}; }
   for(let i=0;i<SCHEDULE.length;i++){
     if(score[0]>=TARGET||score[1]>=TARGET) break;
     const s=SCHEDULE[i], m=lineup.m[i];
-    const r=play(m.E,m.W,s.type,s.day,"bo3");
+    const E=m.E.map(id=>resolve(0,id)), W=m.W.map(id=>resolve(1,id));
+    let r;
+    const badE=E.includes(null)||(E.length===2&&E[0]===E[1]), badW=W.includes(null)||(W.length===2&&W[0]===W[1]);
+    if(badE&&badW) r=forfeitResult(rng()<0.5?0:1,"both");      // (practically never) both teams short: coin flip
+    else if(badE) r=forfeitResult(0,"noplayer");
+    else if(badW) r=forfeitResult(1,"noplayer");
+    else r=play(E,W,s.type,s.day,"bo3",s.n);
     const pts=POINTS(s.day); score[r.winner]+=pts;
     afterLoss[r.winner]=false; afterLoss[1-r.winner]=true;
-    results.push({i, n:s.n, day:s.day, type:s.type, E:m.E.slice(), W:m.W.slice(), pts, ...r, score:score.slice()});
+    const fin = r.finishers || {E:E.filter(x=>x!=null),W:W.filter(x=>x!=null)}; // forfeits: show who was healthy (no points credited)
+    results.push({i, n:s.n, day:s.day, type:s.type, E:fin.E.slice(), W:fin.W.slice(), started:{E:E.slice(),W:W.slice()}, scheduled:{E:m.E.slice(),W:m.W.slice()}, pts, ...r, score:score.slice()});
     if(clinchedAt==null && (score[0]>=TARGET||score[1]>=TARGET)) clinchedAt=i;
   }
   let decider=null, winner;
   if(score[0]===12 && score[1]===12){
-    const dE = lineup.dec.E[0]!=null&&lineup.dec.E[1]!=null&&lineup.dec.E[0]!==lineup.dec.E[1] ? lineup.dec.E : (b=>[b.a,b.b])(bestPairs(teams.E)[0]);
-    const dW = lineup.dec.W[0]!=null&&lineup.dec.W[1]!=null&&lineup.dec.W[0]!==lineup.dec.W[1] ? lineup.dec.W : (b=>[b.a,b.b])(bestPairs(teams.W)[0]);
-    const r=play(dE,dW,"D",3,"set");
-    decider={E:dE.slice(),W:dW.slice(),...r};
+    const pick=(t,sd)=>{ // chosen pair if healthy (sub covers the injured), otherwise the best healthy pair
+      const d=lineup.dec[sd]; let ids = (d[0]!=null&&d[1]!=null&&d[0]!==d[1]) ? d.map(id=>resolve(t,id)) : [null,null];
+      if(ids.includes(null)||ids[0]===ids[1]){
+        const T=st[t]; const healthy=[...teams[sd].filter(id=>!T.out.has(id)), ...(T.alt!=null&&!T.altHurt&&!teams[sd].includes(T.alt)?[T.alt]:[])];
+        if(healthy.length<2) return null;
+        const b=bestPairs(healthy)[0]; ids=[b.a,b.b];
+      }
+      return ids;
+    };
+    const dE=pick(0,"E"), dW=pick(1,"W");
+    let r;
+    if(!dE&&!dW) r=forfeitResult(rng()<0.5?0:1,"both"); else if(!dE) r=forfeitResult(0,"noplayer"); else if(!dW) r=forfeitResult(1,"noplayer");
+    else r=play(dE,dW,"D",3,"set","Decider");
+    const fin=r.finishers||{E:(dE||[]).filter(x=>x!=null),W:(dW||[]).filter(x=>x!=null)};
+    decider={E:fin.E.slice(),W:fin.W.slice(),started:{E:dE,W:dW},...r};
     winner=r.winner;
   } else winner = score[0]>=TARGET?0:1;
-  return {winner, score, results, decider, clinchedAt};
+  const altPlayed=[0,1].map(t=>st[t].altFor!=null);
+  return {winner, score, results, decider, clinchedAt, injuries, altPlayed, injuryBase:base};
 }
 
-const API = {eligibleRoster,FAVORITES,RANKINGS,COUNTRIES,PLAYERS,PBYID,REAL_2026,CAPTAINS,CBYID,SCHEDULE,DAY_NAMES,TARGET,
+const API = {INJURY_CHANCE_PER_MATCH,INJURY_TIERS,injuryPoint,eligibleRoster,FAVORITES,RANKINGS,COUNTRIES,PLAYERS,PBYID,REAL_2026,CAPTAINS,CBYID,SCHEDULE,DAY_NAMES,TARGET,
   pGame,pTB,pSet,pMatch,serveProbs,matchWinProb,pairElo,bestPairs,mulberry32,simMatch,simCup,makeEdgeFn,captainFx,
   emptyLineup,autoTeamLineup,applyTeamLineup,autoPickBest,validate,shuffle,TEAMNAME};
 root.LC = API;
@@ -643,9 +738,14 @@ const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;"
 const KEY="laverCupSim.v1";
 const sideCls=s=>s==="E"?"eu":"w";
 function defaults(){ return {view:"draft",teams:{E:[],W:[]},capt:{E:{c:"noah",v:"henman"},W:{c:"agassi",v:"rafter"}},
-  custom:{E:"",W:""},managers:{E:"",W:""},fx:true,extended:false,speed:"normal",lineup:LC.emptyLineup()}; }
+  custom:{E:"",W:""},managers:{E:"",W:""},fx:true,extended:false,speed:"normal",lineup:LC.emptyLineup(),alts:{E:null,W:null},injury:LC.INJURY_CHANCE_PER_MATCH}; }
 function load(){ try{ const s=JSON.parse(localStorage.getItem(KEY)); if(s&&s.teams&&s.lineup&&s.lineup.m&&s.lineup.m.length===12) return Object.assign(defaults(),s); }catch(e){} return null; }
 let S = load() || defaults();
+const INJ_OPTS=[0,0.01,0.03,0.05,0.1];
+const injPct=v=>v>0?Math.round(v*100)+"%":"Off";
+function injSelect(){ return `<label class="switch injset" title="How likely a player gets hurt in one match. Players with a 🩹 have had injuries lately, so their chance is a bit higher."><span>🩹 Injuries</span>
+  <select class="injSel" aria-label="Injury chance">${INJ_OPTS.map(v=>`<option value="${v}" ${S.injury===v?"selected":""}>${v>0?Math.round(v*100)+"% per match":"Off"}</option>`).join("")}</select></label>`; }
+const cupTeams=()=>({E:S.teams.E, W:S.teams.W, alts:{E:S.alts.E, W:S.alts.W}});
 // Clean up old saved teams (e.g. Russians who used to be allowed on Team Europe)
 let MOVED=[];
 (function cleanSaved(){
@@ -655,12 +755,17 @@ let MOVED=[];
   const ok=new Set([...S.teams.E,...S.teams.W]);
   S.lineup.m.forEach(m=>["E","W"].forEach(sd=>{ m[sd]=(m[sd]||[]).map(x=>x!=null&&S.teams[sd].includes(x)?x:null); }));
   ["E","W"].forEach(sd=>{ S.lineup.dec[sd]=(S.lineup.dec[sd]||[null,null]).map(x=>x!=null&&S.teams[sd].includes(x)?x:null); });
+  if(!S.alts||typeof S.alts!=="object") S.alts={E:null,W:null};
+  ["E","W"].forEach(sd=>{ const a=S.alts[sd]; const p=PBYID[a]; if(a!=null && !(p && p.team===sd && !S.teams[sd].includes(a))){ if(p&&p.team!==sd) MOVED.push(p.short); S.alts[sd]=null; } if(S.alts[sd]===undefined) S.alts[sd]=null; });
+  if(!INJ_OPTS.includes(S.injury)) S.injury=LC.INJURY_CHANCE_PER_MATCH;
   ["E","W"].forEach(sd=>{ ["c","v"].forEach(sl=>{ if(!CBYID[S.capt[sd][sl]]) S.capt[sd][sl]= sl==="c"?(sd==="E"?"noah":"agassi"):"none"; }); });
 })();
 function save(){ try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){} }
 function toast(t){ const el=$("#toast"); el.textContent=t; el.classList.add("show"); clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove("show"),t.length>60?5000:1800); }
 const teamsReady=()=>S.teams.E.length===6&&S.teams.W.length===6;
 const pname=id=>id==null?"?":(PBYID[id].fav?"⭐ ":"")+PBYID[id].short;
+const injIcon=p=>p.injuryRisk>=1.5?`<span class="inj" title="Has had injuries lately: ${p.injuryRisk}× the normal chance to get hurt">🩹</span>`:"";
+const altName=side=>S.alts[side]!=null?PBYID[S.alts[side]].flag+" "+esc(PBYID[S.alts[side]].short):"none";
 const favHTML=id=>PBYID[id]&&PBYID[id].fav?`<span class="star" title="Fan favorite!">⭐</span> `:"";
 const sideNames=ids=>ids.map(pname).join(" / ");
 const sideFlags=ids=>ids.map(id=>PBYID[id].flag).join("");
@@ -699,26 +804,29 @@ const WORDS = `<div class="words">
 
 /* ---------- 1. DRAFT ---------- */
 function playerCard(p,side,full){
-  return `<button class="pcard ${full?"dis":""} ${p.fav?"fav":""}" data-add="${p.id}" data-side="${side}" ${full?"disabled":""} title="${p.fav?"⭐ Fan favorite! ":""}${esc(p.name)} · ${esc(p.country)} · ${p.pts.toLocaleString()} ATP pts">
+  return `<button class="pcard ${full?"dis":""} ${p.fav?"fav":""}" data-add="${p.id}" data-side="${side}" ${full?"disabled":""} title="${p.fav?"⭐ Fan favorite! ":""}${esc(p.name)} · ${esc(p.country)} · ${p.pts.toLocaleString()} ATP pts${p.injuryRisk>=1.5?" · 🩹 has had injuries lately":""}">
     <span class="flag">${p.flag}</span>
-    <span class="info"><div class="nm">${p.fav?'<span class="star">⭐</span> ':""}${esc(p.name)}${p.fav?'<span class="favtag">Fan favorite</span>':""}</div>
+    <span class="info"><div class="nm">${p.fav?'<span class="star">⭐</span> ':""}${esc(p.name)} ${injIcon(p)}${p.fav?'<span class="favtag">Fan favorite</span>':""}</div>
       <div class="meta">⚡ ${p.elo} singles · 🤝 ${p.delo} doubles</div>${powerBar(p.elo)}</span>
     <span class="rk">#${p.rank}</span></button>`;
 }
 function teamCol(side){
-  const maxRank=S.extended?50:30, team=S.teams[side], cls=sideCls(side), full=team.length>=6;
-  const pool=PLAYERS.filter(p=>p.team===side && !team.includes(p.id) && (p.rank<=maxRank||p.fav)).sort((a,b)=>(b.fav-a.fav)||(a.rank-b.rank));
+  const maxRank=S.extended?50:30, team=S.teams[side], cls=sideCls(side), alt=S.alts[side], full=team.length>=6&&alt!=null;
+  const pool=PLAYERS.filter(p=>p.team===side && !team.includes(p.id) && p.id!==alt && (p.rank<=maxRank||p.fav)).sort((a,b)=>(b.fav-a.fav)||(a.rank-b.rank));
   const avg = team.length? Math.round(team.reduce((a,id)=>a+PBYID[id].elo,0)/team.length):0;
   let slots=""; for(let i=0;i<6;i++){ const id=team[i];
     slots += id? `<div class="slot filled ${PBYID[id].fav?"fav":""}" data-rm="${id}" data-side="${side}"><span style="font-size:1.4rem">${PBYID[id].flag}</span><span class="nm">${favHTML(id)}${esc(PBYID[id].short)}</span>${PBYID[id].fav?'<span class="favtag" style="margin:0">Fan favorite</span>':""}<span class="small mut">#${PBYID[id].rank} · ⚡${PBYID[id].elo}</span></div>`
               : `<div class="slot">Player ${i+1}</div>`; }
+  const altSlot = alt!=null
+    ? `<div class="slot filled altslot" data-rm="${alt}" data-side="${side}" title="Alternate = the Sub. Sits on the bench and only plays if someone gets hurt."><span class="alttag">🔁 Alternate (Sub)</span><span><span style="font-size:1.3rem">${PBYID[alt].flag}</span> <span class="nm">${favHTML(alt)}${esc(PBYID[alt].short)}</span> ${injIcon(PBYID[alt])}</span><span class="small mut">#${PBYID[alt].rank} · ⚡${PBYID[alt].elo}</span></div>`
+    : `<div class="slot altslot" title="Alternate = the Sub. Sits on the bench and only plays if someone gets hurt."><span class="alttag">🔁 Alternate (Sub)</span><span>${team.length>=6?"Tap a player below to make them the Sub":"Pick your 6 first, then a Sub"}</span>${team.length>=6?`<button class="mini" data-act="bestAlt" data-side="${side}">✨ Pick the next best</button>`:""}</div>`;
   const eligible = PLAYERS.filter(p=>p.team===side && p.rank<=30).length;
   return `<div class="panel team-col ${cls}">
     <div class="team-head"><h2 class="team-name">${side==="E"?"🇪🇺 Team Europe":"🌎 Team World"}</h2>
-      <span class="tag ${cls}">${team.length}/6 picked${avg?` · avg ⚡${avg}`:""}</span></div>
-    <div class="slots">${slots}</div>
+      <span class="tag ${cls}">${team.length}/6 picked${alt!=null?" + Sub":""}${avg?` · avg ⚡${avg}`:""}</span></div>
+    <div class="slots">${slots}</div>${altSlot}
     <div class="row">
-      <button class="${side==="E"?"btn-eu":"btn-w"}" data-act="best6" data-side="${side}">⭐ Pick the best 6</button>
+      <button class="${side==="E"?"btn-eu":"btn-w"}" data-act="best6" data-side="${side}">⭐ Pick the best 6 + Sub</button>
       <button data-act="rand6" data-side="${side}">🎲 Surprise me!</button>
       <button data-act="clear" data-side="${side}">🧹 Start over</button>
     </div>
@@ -733,7 +841,8 @@ function renderDraft(){
     <div class="mut" style="font-size:.95rem">Tap a player to put them on a team. Tap them again to take them off.<br>
     Players from Europe play for <b style="color:var(--eu-l)">Team Europe</b>. Everyone else plays for <b style="color:var(--w-l)">Team World</b>.<br>
     <span class="small">Our house rule: Russian players (⚪ neutral flag) play for <b style="color:var(--w-l)">Team World</b>.</span><br>
-    ⚡ = how strong in <span class="hint" title="Singles = 1 player vs 1 player">singles (1 vs 1)</span> · 🤝 = how strong in <span class="hint" title="Doubles = 2 players vs 2 players">doubles (2 vs 2)</span> · #3 = world ranking</div>
+    ⚡ = how strong in <span class="hint" title="Singles = 1 player vs 1 player">singles (1 vs 1)</span> · 🤝 = how strong in <span class="hint" title="Doubles = 2 players vs 2 players">doubles (2 vs 2)</span> · #3 = world ranking · 🩹 = has had injuries lately (a bit more likely to get hurt)<br>
+    <span class="small">After your 6, pick a 🔁 <b>Sub</b> (alternate). The Sub only plays if somebody gets hurt.</span></div>
     <div class="small mut">Players = the world's top 30 (${esc(LC.RANKINGS.label)}).</div></div>
     <div class="row">
       <label class="switch"><input type="checkbox" id="ext" ${S.extended?"checked":""}> Show more players (#31–50)</label>
@@ -751,6 +860,11 @@ function removeFromLineup(id){
 function setTeam(side,ids){
   S.teams[side].forEach(id=>{ if(!ids.includes(id)) removeFromLineup(id); });
   S.teams[side]=ids.slice(0,6);
+  if(S.teams[side].includes(S.alts[side])) S.alts[side]=null;
+}
+function nextBestAlt(side){ // next-best eligible player who isn't already on the team
+  const pick=mr=>PLAYERS.find(p=>p.team===side && !S.teams[side].includes(p.id) && (!mr||p.rank<=mr));
+  const p=pick(S.extended?50:30)||pick(0); return p?p.id:null;
 }
 
 /* ---------- 2. CAPTAINS ---------- */
@@ -777,14 +891,15 @@ function renderCapt(){
     ${(S.capt[side].c==="custom"||S.capt[side].v==="custom")?`<label class="f" style="margin-top:8px">Your coach's name<input type="text" maxlength="24" data-custom="${side}" value="${esc(S.custom[side])}" placeholder="e.g. Coach Dad"></label>`:""}
     <label class="f" style="margin-top:8px">Who's the boss of this team?<input type="text" maxlength="24" data-mgr="${side}" value="${esc(S.managers[side])}" placeholder="${side==="E"?"e.g. Brett":"e.g. your son"}"></label>
     ${fxCard(side,"c")}${fxCard(side,"v")}
-    <div class="small mut" style="margin-top:8px">Roster: ${S.teams[side].map(id=>PBYID[id].flag+" "+esc(PBYID[id].short)).join(", ")}</div>
+    <div class="small mut" style="margin-top:8px">Roster: ${S.teams[side].map(id=>PBYID[id].flag+" "+esc(PBYID[id].short)).join(", ")}<br><span title="The Sub only plays if someone gets hurt">🔁 Alternate (Sub): ${altName(side)}</span></div>
   </div>`;
   $("#v-capt").innerHTML=`
   <div class="row" style="justify-content:space-between;margin-bottom:12px">
     <div><h2>Step 2 · Pick your coaches</h2>
     <div class="mut" style="font-size:.95rem">Pick a tennis legend to coach each team. Every coach has a tiny ✨ power that helps a little in special moments.<br>It's small on purpose, so it only matters in super close matches.</div></div>
-    <label class="switch"><input type="checkbox" id="fxon" ${S.fx?"checked":""}> Coach powers ON</label>
+    <div class="row"><label class="switch"><input type="checkbox" id="fxon" ${S.fx?"checked":""}> Coach powers ON</label>${injSelect()}</div>
   </div>
+  <div class="small mut" style="margin:-4px 0 10px">🩹 Injuries: sometimes a player gets hurt in the middle of a match. Then the team's 🔁 Sub comes in and plays the rest of the cup for them. Players with 🩹 get hurt a bit more often.</div>
   <div class="grid2">${col("E")}${col("W")}</div>
   <div class="row" style="justify-content:space-between;margin-top:14px">
     <button data-go="draft">← Back to draft</button>
@@ -841,7 +956,8 @@ function renderLineup(){
     <button data-act="clearLineup">🧹 Start over</button>
   </div>
   <div class="panel"><div class="msgs" style="margin-top:0">${msgs}${v.warns.map(w=>`<div class="msg warn">💡 ${esc(w)}</div>`).join("")}</div>
-    <div style="margin-top:10px">${usage("E")}${usage("W")}</div></div>
+    <div style="margin-top:10px">${usage("E")}${usage("W")}</div>
+    <div class="usage alts"><b class="small">🔁 Alternates (Subs):</b><span class="chip" title="Sits on the bench. Only plays if someone gets hurt.">🇪🇺 Alternate: ${altName("E")}</span><span class="chip" title="Sits on the bench. Only plays if someone gets hurt.">🌎 Alternate: ${altName("W")}</span><span class="small mut">They aren't in the matchups. They only play if someone gets hurt (🩹 injuries: ${injPct(S.injury)}).</span></div></div>
   ${days}
   <div class="row" style="justify-content:space-between;margin-top:14px">
     <button data-go="capt">← Captains</button>
@@ -852,7 +968,7 @@ function renderLineup(){
 /* ---------- 4. PLAY IT OUT ---------- */
 let P=null; // {cup, shown, busy, auto, decShown}
 const SPEEDS={slow:1100,normal:650,fast:220,instant:0};
-function newCup(){ P={cup:LC.simCup(S.teams,S.lineup,S.capt,{fx:S.fx}), shown:0, busy:false, auto:false, decShown:false, revealSets:{}}; }
+function newCup(){ P={cup:LC.simCup(cupTeams(),S.lineup,S.capt,{fx:S.fx,injury:S.injury}), shown:0, busy:false, auto:false, decShown:false, revealSets:{}}; }
 function shownScore(){ if(!P||P.shown===0) return [0,0]; return P.cup.results[P.shown-1].score.slice(); }
 function prog(n){ let h=""; for(let i=1;i<=13;i++) h+=`<i class="${i<=n?"on":""}"></i>`; return `<div class="prog13">${h}</div>`; }
 function boardHTML(){
@@ -860,26 +976,54 @@ function boardHTML(){
   let dayTxt = nextIdx==null ? (P.cup.decider && !P.decShown ? "THE DECIDER!" : "Final") : DAY_NAMES[SCHEDULE[nextIdx].day];
   if(P.shown===0) dayTxt = "Ready! " + DAY_NAMES[1];
   const mgr=side=>S.managers[side]?` · boss: ${esc(S.managers[side])}`:"";
+  const seen=new Set(P.cup.results.slice(0,P.shown).map(r=>r.n)); if(P.decShown) seen.add("Decider");
+  const injs=P.cup.injuries.filter(x=>seen.has(x.match));
+  const sub=side=>{ const t=side==="E"?0:1; const out=injs.filter(x=>x.team===t).map(x=>pname(x.hurt)); const on=injs.some(x=>x.team===t&&x.sub!=null);
+    return `<div class="cap" title="Alternate = the Sub. Only plays if someone gets hurt.">🔁 Alternate: ${altName(side)}${on?" <b>(playing!)</b>":""}${out.length?` · 🩹 out: ${esc(out.join(", "))}`:""}</div>`; };
   return `<div class="board">
-    <div class="side eu"><div><div class="tn">Team Europe</div><div class="cap">Capt. ${esc(captName("E","c"))}${mgr("E")}</div>${prog(sc[0])}</div><div class="sc" id="scE">${sc[0]}</div></div>
+    <div class="side eu"><div><div class="tn">Team Europe</div><div class="cap">Capt. ${esc(captName("E","c"))}${mgr("E")}</div>${sub("E")}${prog(sc[0])}</div><div class="sc" id="scE">${sc[0]}</div></div>
     <div class="mid"><div class="ft hint" title="The first team to get 13 points wins the Laver Cup">First to 13 wins</div><div class="dy">${dayTxt}</div><div class="ft" style="margin-top:4px">${P.shown}/12 played</div></div>
-    <div class="side w"><div class="sc" id="scW">${sc[1]}</div><div><div class="tn">Team World</div><div class="cap">Capt. ${esc(captName("W","c"))}${mgr("W")}</div>${prog(sc[1])}</div></div>
+    <div class="side w"><div class="sc" id="scW">${sc[1]}</div><div><div class="tn">Team World</div><div class="cap">Capt. ${esc(captName("W","c"))}${mgr("W")}</div>${sub("W")}${prog(sc[1])}</div></div>
   </div>`;
 }
+function whoHTML(r,side,ids,done){ // shows "Alcaraz 🩹➜ Fery" when the Sub came in
+  if(!ids.length) return "(nobody healthy)";
+  const sd=side===0?"E":"W"; const start=r.started&&r.started[sd];
+  if(done && start && start.length===ids.length && start.some((id,k)=>id!==ids[k]))
+    return ids.map((id,k)=>id===start[k]? PBYID[id].flag+" "+esc(pname(id)) : `${PBYID[start[k]].flag} <s class="mut">${esc(pname(start[k]))}</s> 🩹➜ ${PBYID[id].flag} ${esc(pname(id))}`).join(" / ");
+  return sideFlags(ids)+" "+esc(sideNames(ids));
+}
 function scoreLines(r,eIds,wIds,nSets){ // nSets: how many sets to reveal (incl. mtb)
-  const cols=[]; r.sets.forEach(s=>cols.push({e:s.g[0],w:s.g[1],tb:s.tb}));
+  const cols=[]; r.sets.forEach(s=>cols.push({e:s.g[0],w:s.g[1],tb:s.partial?null:s.tb,partial:!!s.partial}));
   if(r.mtb) cols.push({e:r.mtb[0],w:r.mtb[1],mtb:true});
   const vis=cols.slice(0,nSets); const done=nSets>=cols.length;
   const cell=(c,side,j)=>{ const mine=side===0?c.e:c.w, theirs=side===0?c.w:c.e; const won=mine>theirs;
+    if(c.partial) return `<div class="g ${j===nSets-1?"pop":""}" title="Stopped here because of an injury">${mine}</div>`;
     let sup=""; if(c.tb && !won) sup=`<sup>${side===0?c.tb[0]:c.tb[1]}</sup>`;
     return `<div class="g ${won?"wg":"lg"} ${j===nSets-1?"pop":""}">${c.mtb?"["+mine+"]":mine}${sup}</div>`; };
   const line=(side)=>{ const ids=side===0?eIds:wIds; const won=done&&r.winner===side;
     let cells=""; for(let j=0;j<3;j++) cells+= vis[j]? cell(vis[j],side,j) : `<div class="g"></div>`;
-    return `<div class="sline ${side===0?"eu":"w"} ${won?"won":""}"><div class="stripe"></div><div class="who">${sideFlags(ids)} ${esc(sideNames(ids))}</div>${cells}<div class="tick">${won?"✔":""}</div></div>`; };
+    return `<div class="sline ${side===0?"eu":"w"} ${won?"won":""}"><div class="stripe"></div><div class="who ${done&&r.events&&r.events.some(e=>e.type==="sub"&&e.team===side)?"swapped":""}">${whoHTML(r,side,ids,done)}${done&&r.retired===side?' <span class="small inj">🩹 stopped</span>':""}${done&&r.forfeit===side?' <span class="small inj">🚫 no player</span>':""}</div>${cells}<div class="tick">${won?"✔":""}</div></div>`; };
   return line(0)+line(1);
 }
+function atTxt(at){ if(!at) return ""; const parts=at.sets.map(g=>g[0]+"–"+g[1]);
+  if(at.tb && at.sets.length===2 && !(at.g[0]||at.g[1])) return `in the match tiebreak (${at.tb[0]}–${at.tb[1]})`;
+  parts.push(at.g[0]+"–"+at.g[1]); return "at "+parts.join(", ")+(at.tb?` (in the tiebreak, ${at.tb[0]}–${at.tb[1]})`:""); }
+function injLines(r){ // kid-friendly injury messages for a match card
+  const T=t=>t===0?"Europe":"World"; const out=[];
+  if(r.forfeit!=null && r.forfeitWhy==="both"){ out.push(`🚫 Neither team has enough healthy players for this match (injuries!), so a coin flip gives Team ${T(r.winner)} the points.`); return out; }
+  if(r.forfeit!=null){ out.push(`🚫 Team ${T(r.forfeit)} has no healthy player left for this match (injuries!), so Team ${T(1-r.forfeit)} gets the points without playing.`); return out; }
+  (r.events||[]).forEach(ev=>{
+    if(ev.type==="sub") out.push(`🩹 Ouch! ${pname(ev.hurt)} got hurt ${atTxt(ev.at)}. ${pname(ev.sub)} comes in for Team ${T(ev.team)}!`);
+    else out.push(`🩹 Ouch! ${pname(ev.hurt)} got hurt ${atTxt(ev.at)} and Team ${T(ev.team)} has no Sub left, so they have to stop. Team ${T(1-ev.team)} wins the match.`); });
+  if((r.events||[]).some(ev=>ev.type==="sub")) out.push(`🎾 Finished by: ${sideNames(r.E)} vs ${sideNames(r.W)}`);
+  return out;
+}
 function commentary(r,eIds,wIds,type,format){
-  const wIdsW = r.winner===0?eIds:wIds; const W=sideNames(wIdsW); const team=r.winner===0?"Europe":"World";
+  if(r.forfeit!=null) return `🚫 No match: Team ${r.winner===0?"Europe":"World"} wins without playing.`;
+  if(r.retired!=null) return `🩹 Match stopped because of an injury. Team ${r.winner===0?"Europe":"World"} wins it.`;
+  if(r.started){ eIds=r.started.E; wIds=r.started.W; }
+  const wIdsW = r.winner===0?r.E||eIds:r.W||wIds; const W=sideNames(wIdsW); const team=r.winner===0?"Europe":"World";
   const pre=LC.matchWinProb(eIds,wIds,type,format); const pw=r.winner===0?pre:1-pre;
   let t="";
   const bagel=r.sets.some(s=>s.g[r.winner]===6&&s.g[1-r.winner]===0);
@@ -903,17 +1047,19 @@ function cardHTML(i){
   const nSets = shown ? 99 : (live ? (P.revealSets[i]||0) : 0);
   const cls = notNeeded && P.shown>=P.cup.results.length ? "notneeded" : (shown||live? (live?"live":"") : "pending");
   let body;
-  if(r && (shown||live)) body = scoreLines(r,m.E,m.W,nSets) + `<div class="comm">${shown?esc(commentary(r,m.E,m.W,s.type)):"🎾 Playing…"}</div>`;
+  if(r && (shown||live)) body = scoreLines(r,shown?r.E:r.started.E,shown?r.W:r.started.W,nSets) + `<div class="comm">${shown?esc(commentary(r,m.E,m.W,s.type)):"🎾 Playing…"}</div>`
+       + (shown?injLines(r).map(t=>`<div class="injnote">${esc(t)}</div>`).join(""):"");
   else body = `<div class="sline eu"><div class="stripe"></div><div class="who">${sideFlags(m.E)} ${esc(sideNames(m.E))}</div></div>
                <div class="sline w"><div class="stripe"></div><div class="who">${sideFlags(m.W)} ${esc(sideNames(m.W))}</div></div>
                <div class="comm mut">${notNeeded&&P.shown>=P.cup.results.length?"Not needed. The cup is already won!":"Coming up…"}</div>`;
-  return `<div class="mcard ${cls}" id="mc${i}"><div class="mh"><span>Match ${s.n} · ${s.type==="D"?"Doubles":"Singles"} · ${DAY_NAMES[s.day].split(" · ")[1]}</span><span class="pt">${s.day} pt${s.day>1?"s":""}</span></div>${body}</div>`;
+  const hurt = r && shown && (r.forfeit!=null || (r.events&&r.events.length));
+  return `<div class="mcard ${cls} ${hurt?"hurt":""}" id="mc${i}"><div class="mh"><span>Match ${s.n} · ${s.type==="D"?"Doubles":"Singles"} · ${DAY_NAMES[s.day].split(" · ")[1]}</span><span class="pt">${s.day} pt${s.day>1?"s":""}</span></div>${body}</div>`;
 }
 function deciderHTML(){
   const d=P.cup.decider; if(!d || P.shown<P.cup.results.length) return "";
   const live=P.busy && !P.decShown; const n= P.decShown?99:(P.revealSets.dec||0);
   return `<div class="panel" style="margin-top:14px;border:2px solid var(--gold)"><h2>⚡ THE DECIDER · 12–12!</h2><div class="mut small">It is a tie! One bonus set of doubles, and the winner takes the Laver Cup!</div>
-    <div class="mcard ${live?"live":""}" style="margin-top:8px">${scoreLines(d,d.E,d.W,n)}<div class="comm">${P.decShown?esc(commentary(d,d.E,d.W,"D","set")):"🎾 Playing…"}</div></div></div>`;
+    <div class="mcard ${live?"live":""}" style="margin-top:8px">${scoreLines(d,d.E,d.W,n)}<div class="comm">${P.decShown?esc(commentary(d,d.E,d.W,"D","set")):"🎾 Playing…"}</div>${P.decShown?injLines(d).map(t=>`<div class="injnote">${esc(t)}</div>`).join(""):""}</div></div>`;
 }
 function renderPlay(){
   if(!P) newCup();
@@ -927,7 +1073,7 @@ function renderPlay(){
     <button data-act="newcup">🔄 Play again</button>
     <label class="f" style="flex-direction:row;align-items:center;gap:8px">Speed
       <select id="speed">${Object.keys(SPEEDS).map(k=>`<option value="${k}" ${S.speed===k?"selected":""}>${k}</option>`).join("")}</select></label>
-    <span class="mut small">Coach powers: ${S.fx?"ON":"OFF"}</span>
+    <span class="mut small">Coach powers: ${S.fx?"ON":"OFF"}</span>${injSelect()}
   </div>
   ${WORDS}<div class="matches">${SCHEDULE.map((s,i)=>cardHTML(i)).join("")}</div>
   ${deciderHTML()}
@@ -955,8 +1101,8 @@ async function revealNext(){
 function bump(w){ const el=document.getElementById(w===0?"scE":"scW"); if(el){ el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump"); } }
 function cupMVP(cup){
   const pts={}; const add=(ids,p)=>ids.forEach(id=>pts[id]=(pts[id]||0)+p);
-  cup.results.forEach(r=>add(r.winner===0?r.E:r.W,r.pts)); if(cup.decider) add(cup.decider.winner===0?cup.decider.E:cup.decider.W,3);
-  const team = cup.winner===0?S.teams.E:S.teams.W;
+  cup.results.forEach(r=>{ if(r.forfeit==null) add(r.winner===0?r.E:r.W,r.pts); }); if(cup.decider&&cup.decider.forfeit==null) add(cup.decider.winner===0?cup.decider.E:cup.decider.W,3);
+  const sd=cup.winner===0?"E":"W"; const team = [...S.teams[sd], ...(S.alts[sd]!=null?[S.alts[sd]]:[])];
   return team.slice().sort((a,b)=>(pts[b]||0)-(pts[a]||0))[0];
 }
 function celebrate(){
@@ -990,7 +1136,7 @@ function renderMC(){
   const running = M&&M.running;
   let out=`<div class="row" style="justify-content:space-between"><div><h2>Step 5 · Play 10,000 pretend cups</h2>
     <div class="mut" style="font-size:.95rem">The computer plays your cup again and again, super fast, with lucky and unlucky bounces. Which team wins more often?</div></div>
-    <div class="row"><select id="mcN">${[1000,10000,50000].map(n=>`<option value="${n}" ${((M&&M.N)||10000)===n?"selected":""}>${n.toLocaleString()} cups</option>`).join("")}</select>
+    <div class="row">${injSelect()}<select id="mcN">${[1000,10000,50000].map(n=>`<option value="${n}" ${((M&&M.N)||10000)===n?"selected":""}>${n.toLocaleString()} cups</option>`).join("")}</select>
     <button class="btn-gold btn-big" data-act="runMC" ${running?"disabled":""}>🚀 Go!</button></div></div>`;
   if(running) out+=`<div class="panel" style="margin-top:14px"><b>Simulating… ${M.done.toLocaleString()} / ${M.N.toLocaleString()}</b><div class="bar" style="height:14px;margin-top:8px"><i style="width:${(M.done/M.N*100).toFixed(1)}%;background:linear-gradient(90deg,var(--eu),var(--w))"></i></div></div>`;
   if(M && M.done>0) out+=mcResults();
@@ -1018,8 +1164,9 @@ function mcResults(){
       <td>${simE==null?"–":Math.round(simE*100)+"%"}</td>
       <td><span class="pgw"><i style="width:${(st.played/n*100).toFixed(0)}%"></i></span> ${(st.played/n*100).toFixed(0)}%</td>
       <td>${(st.clinch/n*100).toFixed(1)}%</td></tr>`; }).join("");
-  const mvp=Object.entries(M.ppts).map(([id,v])=>({id:+id,v:v/n})).sort((a,b)=>b.v-a.v);
-  const mvpRows=mvp.map(o=>{ const p=PBYID[o.id]; return `<tr><td>${p.flag} ${favHTML(p.id)}${esc(p.name)}</td><td><span class="tag ${sideCls(p.team)}">${p.team==="E"?"Europe":"World"}</span></td><td>⚡${p.elo} · 🤝${p.delo}</td><td><b>${o.v.toFixed(2)}</b></td></tr>`; }).join("");
+  const mvp=Object.entries(M.ppts).filter(([id])=>PBYID[id]).map(([id,v])=>({id:+id,v:v/n})).sort((a,b)=>b.v-a.v);
+  const isAlt=id=>M.altIds&&M.altIds.includes(id);
+  const mvpRows=mvp.map(o=>{ const p=PBYID[o.id]; return `<tr><td>${p.flag} ${favHTML(p.id)}${esc(p.name)}${isAlt(p.id)?' <span class="tag" title="Only plays if someone gets hurt">🔁 Alternate (Sub)</span>':""}</td><td><span class="tag ${sideCls(p.team)}">${p.team==="E"?"Europe":"World"}</span></td><td>⚡${p.elo} · 🤝${p.delo}</td><td><b>${o.v.toFixed(2)}</b></td></tr>`; }).join("");
   return `<div class="panel" style="margin-top:14px">
     <div class="big-pct"><div class="e" style="width:${Math.max(pe*100,12)}%">🇪🇺 ${(pe*100).toFixed(1)}%</div><div class="wd" style="width:${Math.max(pw*100,12)}%">${(pw*100).toFixed(1)}% 🌎</div></div>
     <div class="stats">
@@ -1029,6 +1176,14 @@ function mcResults(){
       <div class="stat"><span class="mut small">Tied 12–12, went to the Decider</span><b>${(M.dec/n*100).toFixed(1)}%</b></div>
       <div class="stat"><span class="mut small">Super close! Won in the very last match</span><b>${((M.match[11].clinch+M.dec)/n*100).toFixed(1)}%</b></div>
       <div class="stat"><span class="mut small">Matches played (on average)</span><b>${(M.mplayed/n).toFixed(1)}</b></div>
+    </div>
+    <h3>🩹 Injuries <span class="small mut">(setting: ${injPct(M.injury)} per match, ×1.5 or ×2 for 🩹 players)</span></h3>
+    <div class="stats">
+      <div class="stat"><span class="mut small">Cups with at least one injury</span><b>${(M.injCups/n*100).toFixed(1)}%</b></div>
+      <div class="stat"><span class="mut small">Injuries per cup (average)</span><b>${(M.inj/n).toFixed(2)}</b></div>
+      <div class="stat"><span class="mut small">Cups where a 🔁 Sub got to play</span><b>${(M.altCups/n*100).toFixed(1)}%</b></div>
+      <div class="stat"><span class="mut small">Matches stopped by injury (no Sub left)</span><b>${(M.ret/n).toFixed(3)}</b><span class="small mut">per cup</span></div>
+      <div class="stat"><span class="mut small">Matches lost with no healthy player</span><b>${(M.ff/n).toFixed(3)}</b><span class="small mut">per cup</span></div>
     </div>
     <h3>Final scores: how often each one happened (%)</h3>${hist}
     <div class="small mut" style="margin-top:22px">Blue = Europe wins, red = World wins. Scores are Europe–World. "12–12 D" = won in the Decider.</div>
@@ -1040,19 +1195,23 @@ function mcResults(){
     <table class="t"><thead><tr><th>Player</th><th>Team</th><th>Power</th><th>Avg points / cup</th></tr></thead><tbody>${mvpRows}</tbody></table></div>`;
 }
 function runMC(N){
-  M={N,done:0,running:true,wins:[0,0],dec:0,scores:{},match:SCHEDULE.map(()=>({played:0,e:0,clinch:0})),ppts:{},mplayed:0};
-  [...S.teams.E,...S.teams.W].forEach(id=>M.ppts[id]=0);
-  const teams=JSON.parse(JSON.stringify(S.teams)), lineup=JSON.parse(JSON.stringify(S.lineup)), capt=JSON.parse(JSON.stringify(S.capt)), fx=S.fx;
+  M={N,done:0,running:true,wins:[0,0],dec:0,scores:{},match:SCHEDULE.map(()=>({played:0,e:0,clinch:0})),ppts:{},mplayed:0,injury:S.injury,inj:0,injCups:0,altCups:0,ret:0,ff:0};
+  const teams=JSON.parse(JSON.stringify(cupTeams())), injury=S.injury;
+  [...teams.E,...teams.W,teams.alts.E,teams.alts.W].filter(id=>id!=null).forEach(id=>M.ppts[id]=0);
+  const lineup=JSON.parse(JSON.stringify(S.lineup)), capt=JSON.parse(JSON.stringify(S.capt)), fx=S.fx;
+  M.altIds=[teams.alts.E,teams.alts.W].filter(x=>x!=null);
   const t0=performance.now();
   function chunk(){
     const end=Math.min(N,M.done+400);
     for(;M.done<end;M.done++){
-      const c=LC.simCup(teams,lineup,capt,{fx});
+      const c=LC.simCup(teams,lineup,capt,{fx,injury});
+      M.inj+=c.injuries.length; if(c.injuries.length) M.injCups++; if(c.altPlayed[0]||c.altPlayed[1]) M.altCups++;
+      [...c.results,...(c.decider?[c.decider]:[])].forEach(r=>{ if(r.retired!=null) M.ret++; if(r.forfeit!=null) M.ff++; });
       M.wins[c.winner]++; M.mplayed+=c.results.length;
       const key = c.decider? `12|12|D|${c.winner===0?"E":"W"}` : `${c.score[0]}|${c.score[1]}|N`;
       M.scores[key]=(M.scores[key]||0)+1;
-      if(c.decider){ M.dec++; (c.decider.winner===0?c.decider.E:c.decider.W).forEach(id=>M.ppts[id]+=3); }
-      c.results.forEach(r=>{ const st=M.match[r.i]; st.played++; if(r.winner===0) st.e++; (r.winner===0?r.E:r.W).forEach(id=>M.ppts[id]+=r.pts); });
+      if(c.decider){ M.dec++; if(c.decider.forfeit==null) (c.decider.winner===0?c.decider.E:c.decider.W).forEach(id=>M.ppts[id]=(M.ppts[id]||0)+3); }
+      c.results.forEach(r=>{ const st=M.match[r.i]; st.played++; if(r.winner===0) st.e++; if(r.forfeit==null) (r.winner===0?r.E:r.W).forEach(id=>M.ppts[id]=(M.ppts[id]||0)+r.pts); });
       if(c.clinchedAt!=null) M.match[c.clinchedAt].clinch++;
     }
     if(M.done<N){ if(S.view==="mc") renderMC(); setTimeout(chunk,0); }
@@ -1065,15 +1224,18 @@ function runMC(N){
 document.addEventListener("click",e=>{
   const t=e.target.closest("[data-go],[data-act],[data-add],[data-rm]"); if(!t) return;
   if(t.dataset.go){ go(t.dataset.go); return; }
-  if(t.dataset.add){ const side=t.dataset.side; if(S.teams[side].length<6){ S.teams[side].push(+t.dataset.add); save(); renderDraft(); } return; }
-  if(t.dataset.rm){ const side=t.dataset.side, id=+t.dataset.rm; setTeam(side,S.teams[side].filter(x=>x!==id)); save(); renderDraft(); return; }
+  if(t.dataset.add){ const side=t.dataset.side, id=+t.dataset.add; if(S.teams[side].length<6){ S.teams[side].push(id); P=null; save(); renderDraft(); }
+    else if(S.alts[side]==null){ S.alts[side]=id; P=null; save(); renderDraft(); toast(`🔁 ${PBYID[id].short} is Team ${side==="E"?"Europe":"World"}'s Sub!`); } return; }
+  if(t.dataset.rm){ const side=t.dataset.side, id=+t.dataset.rm; if(S.alts[side]===id) S.alts[side]=null; else setTeam(side,S.teams[side].filter(x=>x!==id)); P=null; save(); renderDraft(); return; }
   const a=t.dataset.act, side=t.dataset.side;
   switch(a){
-    case "best6": setTeam(side,LC.autoPickBest(side,6,{maxRank:S.extended?50:30})); P=null; break;
-    case "rand6": { const pool=PLAYERS.filter(p=>p.team===side&&p.rank<=(S.extended?50:30)).map(p=>p.id); setTeam(side,LC.shuffle(pool,Math.random).slice(0,6)); P=null; break; }
-    case "clear": setTeam(side,[]); P=null; break;
+    case "best6": setTeam(side,LC.autoPickBest(side,6,{maxRank:S.extended?50:30})); S.alts[side]=nextBestAlt(side); P=null; break;
+    case "bestAlt": S.alts[side]=nextBestAlt(side); P=null; break;
+    case "rand6": { const pool=LC.shuffle(PLAYERS.filter(p=>p.team===side&&p.rank<=(S.extended?50:30)).map(p=>p.id),Math.random); setTeam(side,pool.slice(0,6)); S.alts[side]=pool[6]!=null?pool[6]:nextBestAlt(side); P=null; break; }
+    case "clear": setTeam(side,[]); S.alts[side]=null; P=null; break;
     case "real2026": { const re=LC.eligibleRoster("E",LC.REAL_2026.E), rw=LC.eligibleRoster("W",LC.REAL_2026.W);
-      setTeam("E",re.ids); setTeam("W",rw.ids); S.capt={E:{c:"noah",v:"henman"},W:{c:"agassi",v:"rafter"}}; P=null;
+      setTeam("E",re.ids); setTeam("W",rw.ids);
+      ["E","W"].forEach(sd=>{ const a=LC.REAL_2026.alts[sd]; S.alts[sd]= (PBYID[a]&&PBYID[a].team===sd&&!S.teams[sd].includes(a)) ? a : nextBestAlt(sd); }); S.capt={E:{c:"noah",v:"henman"},W:{c:"agassi",v:"rafter"}}; P=null;
       const notes=[...re.notes,...rw.notes]; toast(notes.length? "Real 2026 teams are in! Note: "+notes.join("; ") : "Real 2026 teams are in! 🇬🇧"); break; }
     case "autoAll": case "autoE": case "autoW":
       ["E","W"].forEach(sd=>{ if(a==="autoAll"||a==="auto"+sd) LC.applyTeamLineup(S.lineup,sd,LC.autoTeamLineup(S.teams[sd])); }); P=null; toast("✨ All filled in!"); break;
@@ -1094,6 +1256,7 @@ document.addEventListener("change",e=>{
   if(t.id==="ext"){ S.extended=t.checked; save(); renderDraft(); return; }
   if(t.id==="fxon"){ S.fx=t.checked; P=null; save(); renderCapt(); return; }
   if(t.id==="speed"){ S.speed=t.value; save(); return; }
+  if(t.classList.contains("injSel")){ S.injury=+t.value; P=null; save(); toast(S.injury?`🩹 Injuries: ${injPct(S.injury)} per match`:"🩹 Injuries are off"); render(); return; }
   if(t.dataset.capt){ S.capt[t.dataset.side][t.dataset.capt]=t.value; P=null; save(); renderCapt(); return; }
   if(t.dataset.m!=null){ const v=t.value===""?null:+t.value; const sd=t.dataset.side, k=+t.dataset.k;
     if(t.dataset.m==="dec") S.lineup.dec[sd][k]=v; else S.lineup.m[+t.dataset.m][sd][k]=v; P=null; save(); renderLineup(); return; }
@@ -1104,7 +1267,7 @@ document.addEventListener("input",e=>{
   if(t.dataset.mgr){ S.managers[t.dataset.mgr]=t.value.slice(0,24); save(); return; }
 });
 $("#celebrate").addEventListener("click",e=>{ if(e.target.id==="celebrate") $("#celebrate").classList.remove("show"); });
-$("#foot").innerHTML=`Player data: ${esc(LC.RANKINGS.label)} (${esc(LC.RANKINGS.source)}). Power ratings are derived from ranking points, a fun model and not official.<br>Laver Cup format: 3 days · 1/2/3 points per win · first to 13 · 12–12 goes to a one-set doubles Decider. Made for fun 🎾`;
+$("#foot").innerHTML=`Player data: ${esc(LC.RANKINGS.label)} (${esc(LC.RANKINGS.source)}). Power ratings are derived from ranking points, a fun model and not official.<br>Injuries: each player's chance per match = the 🩹 setting × their injury-risk tier (0.5/1/1.5/2, from recent injury news; not medical data). Laver Cup format: 3 days · 1/2/3 points per win · first to 13 · 12–12 goes to a one-set doubles Decider. Made for fun 🎾`;
 if(!canGo(S.view)) S.view = teamsReady()?"lineup":"draft";
 if(MOVED.length){ save(); setTimeout(()=>toast(`House rule update: ${MOVED.join(", ")} now play${MOVED.length>1?"":"s"} for Team World, so we took them off Team Europe. Pick someone new!`),300); }
 render();

@@ -1,5 +1,5 @@
 // Laver Cup Sim service worker: offline app shell. Version changes whenever files change.
-const CACHE = "laver-cup-76c2cf85dd";
+const CACHE = "laver-cup-92aa03398d";
 const ASSETS = ["./", "index.html", "manifest.webmanifest", "apple-touch-icon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "favicon-32.png"];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
